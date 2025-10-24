@@ -21,3 +21,18 @@ def decr(key:bytes, iv:bytes, cipher_text:bytes) -> bytes:
     cipher = AES.new(key, AES.MODE_CBC, iv)
     padded_plain = cipher.decrypt(cipher_text)
     return unpad(padded_plain)
+
+def enc_file(src:str, dest:str, key:bytes, iv:bytes):
+    with open(src, "rb") as f:
+        plain = f.read()
+    cipher_text = enc(key, iv, plain)
+    with open(dest, "wb") as f:
+        f.write(cipher_text)
+
+def dec_file(src:str, dest:str, key:bytes, iv:bytes):
+    with open(src, "rb") as f:
+        cipher = f.read()
+    plain = decr(key, iv, cipher)
+    with open(dest, "wb") as f:
+        f.write(plain)
+
