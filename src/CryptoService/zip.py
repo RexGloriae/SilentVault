@@ -2,7 +2,7 @@ import zipfile
 
 # @param src: list of files to zip
 # @param dest: archive name
-def zip(src: list[str], dest: str):
+def zip_file(src: list[str], dest: str):
     with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED) as zip_file:
         for file in src:
             zip_file.write(file)
