@@ -1,5 +1,5 @@
 CXX = g++
-FLAGS = -Wall -I./src/PythonWrapper/python3 -I./src/PythonWrapper/python3/include -std=c++17
+FLAGS = -Wall -g -I./src/PythonWrapper/python3 -I./src/PythonWrapper/python3/include -std=c++17
 PYFLAGS = -lpython3.12
 
 CLIENT_DIR = src/Client/src
