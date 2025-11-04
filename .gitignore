@@ -1,8 +1,9 @@
 # VS Code
 .vscode
 
-# Executable
+# Directories
 bin/
+src/Server/crypto
 
 # Prerequisites
 *.d
