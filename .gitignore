@@ -1,9 +1,11 @@
 # VS Code
 .vscode
 
-# Directories
-bin/
+# Directories and binaries
+src/Server/bin
+src/Client/bin
 src/Server/crypto
+src/Client/crypto
 
 # Prerequisites
 *.d
