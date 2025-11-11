@@ -1,13 +1,14 @@
 CXX = g++
 FLAGS = -Wall -g -I./src/PythonWrapper/python3 -I./src/PythonWrapper/python3/include -std=c++17
 PYFLAGS = -lpython3.12
+LDFLAGS = -L/usr/local/openssl/lib -lssl -lcrypto
 
 CLIENT_DIR = src/Client/src
 SERVER_DIR = src/Server/src
 PYWRAPPER_DIR = src/PythonWrapper
 
-CLIENT_BIN = bin/client
-SERVER_BIN = bin/server
+CLIENT_BIN = src/Client/bin/client
+SERVER_BIN = src/Server/bin/server
 
 CLIENT_SRCS = $(wildcard $(CLIENT_DIR)/*.cpp)
 SERVER_SRCS = $(wildcard $(SERVER_DIR)/*.cpp)
@@ -22,10 +23,10 @@ PYWRAPPER_OBJS = $(PYWRAPPER_SRCS:.cpp=.o)
 all: client server
 
 client: $(CLIENT_OBJS) $(PYWRAPPER_OBJS)
-	$(CXX) -o $(CLIENT_BIN) $^ $(PYFLAGS)
+	$(CXX) -o $(CLIENT_BIN) $^ $(PYFLAGS) $(LDFLAGS)
 
 server: $(SERVER_OBJS) $(PYWRAPPER_OBJS)
-	$(CXX) -o $(SERVER_BIN) $^ $(PYFLAGS)
+	$(CXX) -o $(SERVER_BIN) $^ $(PYFLAGS) $(LDFLAGS)
 
 %.o: %.cpp
 	$(CXX) $(FLAGS) -c $< -o $@
