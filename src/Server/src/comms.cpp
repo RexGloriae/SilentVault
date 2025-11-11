@@ -12,6 +12,9 @@ void Comms::create_context(const char* cert_file, const char* key_file) {
 
     if (SSL_CTX_use_certificate_file(m_ctx, cert_file, SSL_FILETYPE_PEM) <=
         0) {
+        unsigned long err = ERR_get_error();
+        std::cerr << "OpenSSL error: " << ERR_error_string(err, nullptr)
+                  << std::endl;
         throw std::runtime_error("Unable to load certificate");
     }
 
@@ -68,7 +71,7 @@ void Comms::start_and_listen() {
             // log error strerror(errno);
             continue;
         }
-        std::thread t(handle_client, client_sock);
+        std::thread t(std::bind(&Comms::handle_client, this, client_sock));
         t.detach();
     }
 }
@@ -85,10 +88,11 @@ void Comms::handle_client(int sock) {
         throw std::runtime_error("error accepting client");
     }
 
+    // TODO: implement client handling
     char buff[4096];
     int  bytes = SSL_read(ssl, buff, sizeof(buff) - 1);
     if (bytes > 0) {
-        std::cout << std::string(buff, bytes);
+        std::cout << std::string(buff, bytes) << std::endl;
         std::string reply = "Server got your message";
         SSL_write(ssl, reply.c_str(), (int)reply.size());
     }

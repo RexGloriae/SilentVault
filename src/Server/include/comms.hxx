@@ -10,6 +10,7 @@
 
 #include <condition_variable>
 #include <cstring>
+#include <functional>
 #include <iostream>
 #include <mutex>
 #include <queue>
@@ -17,8 +18,8 @@
 #include <thread>
 
 #define PORT "4433"
-#define CERT_FILE "./crypto/server.crt"
-#define KEY_FILE "./crypto/server.key"
+#define CERT_FILE "../crypto/server.crt"
+#define KEY_FILE "../crypto/server.key"
 
 class Comms {
    public:
