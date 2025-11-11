@@ -73,7 +73,6 @@ void Comms::start_and_listen() {
     }
 }
 
-#include <iostream>
 void Comms::handle_client(int sock) {
     SSL* ssl = SSL_new(m_ctx);
     SSL_set_fd(ssl, sock);

@@ -10,6 +10,7 @@
 
 #include <condition_variable>
 #include <cstring>
+#include <iostream>
 #include <mutex>
 #include <queue>
 #include <string>
