@@ -37,10 +37,12 @@ class Comms {
         SSL_library_init();
         OpenSSL_add_all_algorithms();
         SSL_load_error_strings();
+    };
+    ~Comms() {
+        SSL_CTX_free(m_ctx);
         SSL_free(m_ssl);
         close(m_sock);
     };
-    ~Comms() { SSL_CTX_free(m_ctx); };
     Comms(const Comms& O) = delete;
     Comms(Comms&& O) = delete;
     Comms& operator=(const Comms& O) = delete;
