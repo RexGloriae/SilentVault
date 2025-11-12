@@ -9,6 +9,7 @@ PYWRAPPER_DIR = src/PythonWrapper
 
 CLIENT_BIN = src/Client/bin/client
 SERVER_BIN = src/Server/bin/server
+PYCACHE = src/CryptoService/__pycache__
 
 CLIENT_SRCS = $(wildcard $(CLIENT_DIR)/*.cpp)
 SERVER_SRCS = $(wildcard $(SERVER_DIR)/*.cpp)
@@ -35,4 +36,4 @@ clean_objs:
 	rm -f $(CLIENT_OBJS) $(SERVER_OBJS) $(PYWRAPPER_OBJS)
 
 clean:
-	rm -f $(CLIENT_OBJS) $(SERVER_OBJS) $(PYWRAPPER_OBJS) $(CLIENT_BIN) $(SERVER_BIN)
+	rm -rf $(CLIENT_OBJS) $(SERVER_OBJS) $(PYWRAPPER_OBJS) $(CLIENT_BIN) $(SERVER_BIN) $(PYCACHE)
