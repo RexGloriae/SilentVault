@@ -27,7 +27,7 @@ class PythonWrapper {
                               const std::vector<char>& iv,
                               const std::vector<char>& cipher);
 
-    std::vector<char> sha256(const std::vector<char>& data);
+    std::string sha256(const std::string& data);
 
     void zip_files(const std::vector<std::string>& srcs,
                    const std::string&              dest);

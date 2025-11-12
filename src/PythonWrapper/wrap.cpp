@@ -82,14 +82,13 @@ std::vector<char> PythonWrapper::decrypt(const std::vector<char>& key,
     return std::vector<char>(buffer, buffer + len);
 }
 
-std::vector<char> PythonWrapper::sha256(const std::vector<char>& data) {
+std::string PythonWrapper::sha256(const std::string& data) {
     PyObject* sys_path = PySys_GetObject("path");
-    PyList_Append(sys_path, PyUnicode_FromString("../CryptoService"));
+    PyList_Append(sys_path, PyUnicode_FromString("../../CryptoService/"));
     PyObject* py_module = PyImport_ImportModule("sha");
     PyObject* py_func = PyObject_GetAttrString(py_module, "hash");
 
-    PyObject* py_data =
-        PyBytes_FromStringAndSize(data.data(), data.size());
+    PyObject* py_data = PyUnicode_FromString(data.c_str());
     PyObject* args = PyTuple_Pack(1, py_data);
     PyObject* result = (PyObject_CallObject(py_func, args));
 
@@ -104,15 +103,15 @@ std::vector<char> PythonWrapper::sha256(const std::vector<char>& data) {
     Py_DECREF(py_data);
     Py_DECREF(args);
 
-    char*      buffer;
-    Py_ssize_t len;
-    if (PyBytes_AsStringAndSize(result, &buffer, &len) == -1) {
+    Py_ssize_t  len;
+    const char* buffer = PyUnicode_AsUTF8AndSize(result, &len);
+    if (!buffer) {
         throw std::runtime_error("Failed to convert Python bytes");
     }
 
     Py_DECREF(result);
 
-    return std::vector<char>(buffer, buffer + len);
+    return std::string(buffer, len);
 }
 
 void PythonWrapper::zip_files(const std::vector<std::string>& srcs,
