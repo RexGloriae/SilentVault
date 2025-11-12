@@ -6,7 +6,10 @@ std::vector<char> PythonWrapper::encrypt(const std::vector<char>& key,
                                          const std::vector<char>& iv,
                                          const std::vector<char>& plain) {
     PyObject* sys_path = PySys_GetObject("path");
-    PyList_Append(sys_path, PyUnicode_FromString("../CryptoService"));
+    PyList_Append(sys_path, PyUnicode_FromString("../../CryptoService/"));
+    PyList_Append(sys_path,
+                  PyUnicode_FromString(
+                      "../../../venv/lib/python3.12/site-packages/"));
     PyObject* py_module = PyImport_ImportModule("aes");
     PyObject* py_func = PyObject_GetAttrString(py_module, "enc");
 
@@ -46,7 +49,10 @@ std::vector<char> PythonWrapper::decrypt(const std::vector<char>& key,
                                          const std::vector<char>& iv,
                                          const std::vector<char>& cipher) {
     PyObject* sys_path = PySys_GetObject("path");
-    PyList_Append(sys_path, PyUnicode_FromString("../CryptoService"));
+    PyList_Append(sys_path, PyUnicode_FromString("../../CryptoService/"));
+    PyList_Append(sys_path,
+                  PyUnicode_FromString(
+                      "../../../venv/lib/python3.12/site-packages/"));
     PyObject* py_module = PyImport_ImportModule("aes");
     PyObject* py_func = PyObject_GetAttrString(py_module, "decr");
 
