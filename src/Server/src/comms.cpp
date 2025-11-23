@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+#include "../include/server.hxx"
+
 void Comms::create_context(const char* cert_file, const char* key_file) {
     const SSL_METHOD* method = TLS_server_method();
     m_ctx = SSL_CTX_new(method);
@@ -63,12 +65,17 @@ void Comms::create_listen_sock(const char* port) {
 void Comms::start_and_listen() {
     create_context(CERT_FILE, KEY_FILE);
     create_listen_sock(PORT);
-    while (true) {
+    while (Server::m_should_stop == false) {
         struct sockaddr_in addr;
         socklen_t          len = sizeof(addr);
         int client_sock = accept(m_sock, (struct sockaddr*)&addr, &len);
         if (client_sock < 0) {
             // log error strerror(errno);
+            continue;
+        }
+
+        if (client_sock < 0) {
+            if (Server::m_should_stop) break;
             continue;
         }
         std::thread t(std::bind(&Comms::handle_client, this, client_sock));
@@ -88,6 +95,12 @@ void Comms::handle_client(int sock) {
         throw std::runtime_error("error accepting client");
     }
 
+    int t_len;
+    SSL_read(ssl, &t_len, sizeof(t_len));
+    t_len = ntohl(t_len);
+    std::vector<char> T(t_len);
+    SSL_read(ssl, T.data(), t_len);
+
     // TODO: implement client handling
     char buff[4096];
     int  bytes = SSL_read(ssl, buff, sizeof(buff) - 1);
@@ -100,4 +113,12 @@ void Comms::handle_client(int sock) {
     SSL_shutdown(ssl);
     SSL_free(ssl);
     close(sock);
+}
+
+void Comms::close_sock() {
+    if (m_sock >= 0) {
+        shutdown(m_sock, SHUT_RDWR);
+        close(m_sock);
+        m_sock = -1;
+    }
 }

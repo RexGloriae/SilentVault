@@ -29,6 +29,7 @@ class Comms {
     }
 
     void start_and_listen(void);
+    void close_sock();
 
    private:
     Comms() {
