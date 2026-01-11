@@ -7,6 +7,8 @@
 #include <vector>
 
 #define SALT "_salt.bin"
+#define FILES "_files.dat"
+#define INDEXED_FILE(i) ("_file_" + std::to_string(i) + ".bin")
 
 class Data {
    private:
@@ -24,6 +26,10 @@ class Data {
     void              _write_byte_stream(const std::vector<char>& data,
                                          std::string              path);
     std::vector<char> _read_byte_stream(std::string path);
+    void _add_file_to_index(std::string user, std::vector<char> filename);
+    int  _get_index(std::string user, std::vector<char> filename);
+    void _remove_index(std::string user, std::vector<char> filename);
+    void _update_index(std::string user, int index);
 
    public:
     static Data& getInstance() {
@@ -42,6 +48,14 @@ class Data {
 
     void              write_salt(std::string user, std::vector<char> salt);
     std::vector<char> read_salt(std::string user);
+
+    void              add_file(std::string       user,
+                               std::vector<char> filename,
+                               std::vector<char> data);
+    std::vector<char> get_file(std::string       user,
+                               std::vector<char> filename);
+    void delete_file(std::string user, std::vector<char> filename);
+    std::vector<std::vector<char>> list_files(std::string user);
 };
 
 #endif  // DATA

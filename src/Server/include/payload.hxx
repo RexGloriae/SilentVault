@@ -19,7 +19,7 @@ enum OPCODE : uint8_t {
     GET_UPLOAD = 0x08,
     POST_DOWNLOAD = 0x09,
     GET_DOWNLOAD_REQUEST = 0x0A,
-    GET_LIST_RESPONSE = 0x0B,
+    GET_LIST_REQUEST = 0x0B,
     POST_LIST = 0x0C,
     GET_DELETE_REQUEST = 0x0D
 };
@@ -41,6 +41,8 @@ interface IPayload {
     virtual bool              auth() const = 0;
     virtual IPayload*         solve() = 0;
     virtual OPCODE            opcode() const = 0;
+    virtual std::vector<char> filename() const = 0;
+    virtual std::vector<char> data() const = 0;
 };
 
 class Payload : public IPayload {
@@ -78,7 +80,13 @@ class Payload : public IPayload {
     virtual IPayload* solve() {
         throw std::runtime_error("Not implemented");
     };
-    virtual OPCODE opcode() const override { return _opcode; }
+    virtual OPCODE            opcode() const override { return _opcode; }
+    virtual std::vector<char> filename() const {
+        throw std::runtime_error("Not implemented");
+    };
+    virtual std::vector<char> data() const {
+        throw std::runtime_error("Not implemented");
+    };
 };
 
 class GetUpload : public Payload {
@@ -95,6 +103,9 @@ class GetUpload : public Payload {
 
     std::vector<char> serialize() override;
     bool              deserialize() override;
+
+    std::vector<char> filename() const override { return _filename; }
+    std::vector<char> data() const override { return _data; }
 };
 
 class PostDownload : public Payload {
@@ -126,6 +137,8 @@ class GetDownloadRequest : public Payload {
 
     std::vector<char> serialize() override;
     bool              deserialize() override;
+
+    std::vector<char> filename() const override { return _filename; }
 };
 
 class GetListRequest : public Payload {
@@ -163,6 +176,8 @@ class GetDeleteRequest : public Payload {
 
     std::vector<char> serialize() override;
     bool              deserialize() override;
+
+    std::vector<char> filename() const override { return _filename; }
 };
 
 class GetChallengeRequest : public Payload {

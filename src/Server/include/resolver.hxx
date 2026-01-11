@@ -23,6 +23,10 @@ class Resolver {
     IPayload* solve(const GetSaltPayload& request);
     IPayload* solve(const GetResponsePayload& request);
     IPayload* solve(const GetChallengeRequest& request);
+    IPayload* solve(const GetDeleteRequest& request);
+    IPayload* solve(const GetDownloadRequest& request);
+    IPayload* solve(const GetListRequest& request);
+    IPayload* solve(const GetUpload& request);
 };
 
 #endif  // RESOLVER

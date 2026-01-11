@@ -345,7 +345,7 @@ bool GetDownloadRequest::deserialize() {
 }
 
 GetListRequest::GetListRequest(std::vector<char> payload)
-    : Payload(GET_LIST_RESPONSE, "") {
+    : Payload(GET_LIST_REQUEST, "") {
     _payload = payload;
 }
 std::vector<char> GetListRequest::serialize() {
@@ -355,7 +355,7 @@ bool GetListRequest::deserialize() {
     size_t index = 0;
     if (_payload.empty()) return false;
     _opcode = static_cast<OPCODE>(_payload[index++]);
-    if (_opcode != GET_LIST_RESPONSE) {
+    if (_opcode != GET_LIST_REQUEST) {
         return false;
     }
     if (index + sizeof(int) > _payload.size()) return false;
@@ -505,6 +505,17 @@ IPayload* PayloadCreator::interpret_payload(std::vector<char> payload) {
             return PayloadCreator::create_get_response_payload(payload);
         case GET_CHALLENGE_REQUEST:
             return PayloadCreator::create_get_challenge_request_payload(
+                payload);
+        case GET_UPLOAD:
+            return PayloadCreator::create_get_upload_payload(payload);
+        case GET_DOWNLOAD_REQUEST:
+            return PayloadCreator::create_get_download_request_payload(
+                payload);
+        case GET_LIST_REQUEST:
+            return PayloadCreator::create_get_list_request_payload(
+                payload);
+        case GET_DELETE_REQUEST:
+            return PayloadCreator::create_get_delete_request_payload(
                 payload);
         default:
             return nullptr;
