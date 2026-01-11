@@ -51,7 +51,7 @@ class PythonWrapper {
      * @return A pair with the public key on the first position and the
      * salt on the second one.
      */
-    std::pair<std::vector<char>, std::vector<char>> client_pub_from_sv(
+    std::pair<std::vector<char>, std::vector<char>> client_pub_from_pass(
         std::string pass);
     /**
      * @brief Create client commit. First step for authentication.
@@ -95,12 +95,15 @@ class PythonWrapper {
                        std::vector<char> c);
 
    private:
-    PythonWrapper() { Py_Initialize(); }
-    ~PythonWrapper() { Py_Finalize(); }
+    PythonWrapper();
+    ~PythonWrapper();
     PythonWrapper(const PythonWrapper& O) = delete;
     PythonWrapper& operator=(const PythonWrapper& O) = delete;
     PythonWrapper(PythonWrapper&& O) = delete;
     PythonWrapper& operator=(PythonWrapper&& O) = delete;
+
+   private:
+    PyThreadState* m_thread_state;
 };
 
 #endif  // PY_WRAP_H
