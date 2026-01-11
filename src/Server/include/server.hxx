@@ -19,14 +19,13 @@ class Server {
 
     void run_cli();
 
-    static void print(const std::string& text, bool new_line);
-
    public:
     Server(Comms& conn);
     ~Server();
 
     static std::atomic<bool> m_should_stop;
     static std::mutex        console_mutex;
+    static void              print(const std::string& text, bool new_line);
 
     void start();
 };
