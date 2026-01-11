@@ -59,7 +59,7 @@ class GetListResponse : public Payload {
     GetListResponse(std::vector<char> payload);
     bool deserialize();
 
-    std::vector<std::vector<char>> filenames();
+    std::vector<std::vector<char>> filenames() { return _filenames; }
 };
 
 class PostUploadFile : public Payload {
