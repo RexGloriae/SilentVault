@@ -2,6 +2,7 @@
 #define SERVER
 
 #include <atomic>
+#include <mutex>
 
 #include "comms.hxx"
 
@@ -25,6 +26,7 @@ class Server {
     ~Server();
 
     static std::atomic<bool> m_should_stop;
+    static std::mutex        console_mutex;
 
     void start();
 };

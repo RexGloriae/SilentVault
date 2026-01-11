@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+#include "../include/payload.hxx"
+#include "../include/resolver.hxx"
 #include "../include/server.hxx"
 
 void Comms::create_context(const char* cert_file, const char* key_file) {
@@ -71,6 +73,7 @@ void Comms::start_and_listen() {
         int client_sock = accept(m_sock, (struct sockaddr*)&addr, &len);
         if (client_sock < 0) {
             // log error strerror(errno);
+            if (Server::m_should_stop == false) break;
             continue;
         }
 
@@ -78,41 +81,116 @@ void Comms::start_and_listen() {
             if (Server::m_should_stop) break;
             continue;
         }
+        std::cout << "Client connected: " << inet_ntoa(addr.sin_addr)
+                  << ":" << ntohs(addr.sin_port) << std::endl;
         std::thread t(std::bind(&Comms::handle_client, this, client_sock));
         t.detach();
     }
 }
 
 void Comms::handle_client(int sock) {
-    SSL* ssl = SSL_new(m_ctx);
-    SSL_set_fd(ssl, sock);
+    SSL* ssl = nullptr;
+    try {
+        ssl = SSL_new(m_ctx);
+        SSL_set_fd(ssl, sock);
 
-    if (SSL_accept(ssl) <= 0) {
-        ERR_print_errors_fp(stderr);
+        if (SSL_accept(ssl) <= 0) {
+            ERR_print_errors_fp(stderr);
+            throw std::runtime_error("error accepting client");
+        }
+
+        // TODO: implement client handling
+        // Loop to handle requests from this client
+        bool run = true;
+        while (run) {
+            int len = 0;
+            int bytes_read = 0;
+            int total_read = 0;
+
+            // 1. Read the length (4 bytes)
+            char* len_buf = reinterpret_cast<char*>(&len);
+            while (total_read < static_cast<int>(sizeof(int))) {
+                bytes_read = SSL_read(ssl, len_buf + total_read,
+                                      sizeof(int) - total_read);
+                if (bytes_read <= 0) {
+                    // Client disconnected or error
+                    run = false;
+                    break;
+                }
+                total_read += bytes_read;
+            }
+            if (!run) break;
+
+            // Safety check
+            if (len < 0 || len > 10 * 1024 * 1024) {
+                 std::cerr << "Invalid length received: " << len << std::endl;
+                 run = false;
+                 break;
+            }
+            if (len == 0) { 
+                 // Empty payload? Just continue (if valid) or close?
+                 // Assuming continue for now, but watch for infinite loops if 0-byte reads persist (should be covered by bytes_read check)
+                 continue; 
+            }
+
+            // 2. Read the body
+            std::vector<char> buff(len);
+            total_read = 0;
+            while (total_read < len) {
+                bytes_read = SSL_read(ssl, buff.data() + total_read,
+                                      len - total_read);
+                if (bytes_read <= 0) {
+                    run = false;
+                    break;
+                }
+                total_read += bytes_read;
+            }
+            if (!run) break;
+
+            std::vector<char> payload = buff;
+            Resolver&         solver = Resolver::get();
+            IPayload* request = PayloadCreator::interpret_payload(payload);
+            if (request == nullptr) {
+                // Unknown opcode or empty
+                continue;
+            }
+
+            if (request->deserialize() == false) {
+                delete request;
+                // log bad request
+                continue;
+            }
+            IPayload* response = solver.solve(request);
+            if (response == nullptr) {
+                delete request;
+                continue;
+            }
+            std::vector<char> reply = response->serialize();
+            len = reply.size();
+            SSL_write(ssl, reinterpret_cast<char*>(&len), sizeof(int));
+            int ret = SSL_write(
+                ssl, reply.data(), static_cast<int>(reply.size()));
+            if (ret <= 0) {
+                // Handle write error
+                ERR_print_errors_fp(stderr);
+            }
+            delete request;
+            delete response;
+        }
+
+        ERR_clear_error();
         SSL_shutdown(ssl);
         SSL_free(ssl);
         close(sock);
-        throw std::runtime_error("error accepting client");
+    } catch (const std::exception& e) {
+        // Log the exception if needed
+        if (ssl) {
+            ERR_clear_error();
+            SSL_shutdown(ssl);
+            SSL_free(ssl);
+        }
+        close(sock);
     }
-
-    int t_len;
-    SSL_read(ssl, &t_len, sizeof(t_len));
-    t_len = ntohl(t_len);
-    std::vector<char> T(t_len);
-    SSL_read(ssl, T.data(), t_len);
-
-    // TODO: implement client handling
-    char buff[4096];
-    int  bytes = SSL_read(ssl, buff, sizeof(buff) - 1);
-    if (bytes > 0) {
-        std::cout << std::string(buff, bytes) << std::endl;
-        std::string reply = "Server got your message";
-        SSL_write(ssl, reply.c_str(), (int)reply.size());
-    }
-
-    SSL_shutdown(ssl);
-    SSL_free(ssl);
-    close(sock);
 }
 
 void Comms::close_sock() {

@@ -7,6 +7,7 @@
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
+#include <signal.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -16,10 +17,14 @@
 #include <string>
 #include <vector>
 
+#include "payload.hxx"
+
 #define SERVER_CERT "../../Server/crypto/server.crt\0"
 #define PORT 4433
-#define HOSTNAME "localhost"
+#define HOSTNAME "127.0.0.1"
 #define HOSTNAME_LEN 9
+constexpr int MAX_RETRIES = 20;
+constexpr int RETRY_DELAY_MS = 250;
 
 class Comms {
    public:
@@ -37,11 +42,20 @@ class Comms {
         SSL_library_init();
         OpenSSL_add_all_algorithms();
         SSL_load_error_strings();
+        signal(SIGPIPE, SIG_IGN);
     };
     ~Comms() {
-        SSL_CTX_free(m_ctx);
-        SSL_free(m_ssl);
-        close(m_sock);
+        if (m_ssl) {
+            ERR_clear_error();
+            SSL_shutdown(m_ssl);
+            SSL_free(m_ssl);
+        }
+        if (m_ctx) {
+            SSL_CTX_free(m_ctx);
+        }
+        if (m_sock >= 0) {
+            close(m_sock);
+        }
     };
     Comms(const Comms& O) = delete;
     Comms(Comms&& O) = delete;
