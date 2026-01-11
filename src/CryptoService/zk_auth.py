@@ -87,22 +87,24 @@ def client_create_commit_from_scalar(x_scalar: int, curve_name: str = 'P-256'):
     # choose ephemeral nonce r
     r = random.StrongRandom().randint(1, n - 1)
     R = G_point * r
-    return point_to_bytes(R, curve_name=curve_name), r
+    return point_to_bytes(R, curve_name=curve_name), r.to_bytes(32, 'big')
 
 def client_compute_response_from_scalar(r_scalar: int, x_scalar: int, challenge_int: int, curve_name: str = 'P-256'):
     curve = _get_curve_info(curve_name)
     n = int(curve.order)
     s = (r_scalar + (challenge_int % n) * (x_scalar % n)) % n
-    return s
+    return s.to_bytes(32, 'big')
 
 def client_compute_response(password: str,
-                            r_scalar: int,
+                            r_bytes: bytes,
                             salt: bytes,
-                            challenge_int: int,
+                            challenge_bytes: bytes,
                             iterations: int = 200000,
                             dklen: int = 32,
                             curve_name: str = 'P-256'):
 
+    r_scalar = int.from_bytes(r_bytes, 'big')
+    challenge_int = int.from_bytes(challenge_bytes, 'big')
     x, _ = password_to_scalar(password, salt=salt, iterations=iterations, dklen=dklen, curve_name=curve_name)
     return client_compute_response_from_scalar(r_scalar, x, challenge_int, curve_name=curve_name)
 
@@ -110,13 +112,15 @@ def client_compute_response(password: str,
 # server functions
 def server_gen_challenge(num_bytes: int = 32):
     b = get_random_bytes(num_bytes)
-    return int.from_bytes(b, 'big')
+    return b
 
 def server_verify(commit_bytes: bytes,
-                  response_s: int,
+                  response_bytes: bytes,
                   public_key_bytes: bytes,
-                  challenge_int: int,
+                  challenge_bytes: bytes,
                   curve_name: str = 'P-256'):
+    response_s = int.from_bytes(response_bytes, 'big')
+    challenge_int = int.from_bytes(challenge_bytes, 'big')
     curve = _get_curve_info(curve_name)
     n = int(curve.order)
     Gx, Gy = int(curve.Gx), int(curve.Gy)
