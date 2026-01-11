@@ -3,6 +3,7 @@
 
 # Directories and binaries
 src/Server/bin
+src/Server/data
 src/Client/bin
 src/Server/crypto
 src/Client/crypto
