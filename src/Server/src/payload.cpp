@@ -433,6 +433,31 @@ bool GetDeleteRequest::deserialize() {
     return true;
 }
 
+IPayload* PayloadCreator::create_post_download_response_payload(
+    std::string user, std::vector<char> filename, std::vector<char> data) {
+    return new PostDownload(filename, data, user);
+}
+IPayload* PayloadCreator::create_post_list_response_payload(
+    std::string user, std::vector<std::vector<char>> filenames) {
+    return new PostListResponse(user, filenames);
+}
+IPayload* PayloadCreator::create_get_download_request_payload(
+    std::vector<char> payload) {
+    return new GetDownloadRequest(payload);
+}
+IPayload* PayloadCreator::create_get_list_request_payload(
+    std::vector<char> payload) {
+    return new GetListRequest(payload);
+}
+IPayload* PayloadCreator::create_get_delete_request_payload(
+    std::vector<char> payload) {
+    return new GetDeleteRequest(payload);
+}
+IPayload* PayloadCreator::create_get_upload_payload(
+    std::vector<char> payload) {
+    return new GetUpload(payload);
+}
+
 IPayload* PayloadCreator::create_post_auth_response_payload(
     std::string user, bool auth_response) {
     return new PostAuthResponsePayload(user, auth_response);
