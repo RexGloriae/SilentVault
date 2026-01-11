@@ -15,7 +15,13 @@ enum OPCODE : uint8_t {
     GET_RESPONSE = 0x04,
     POST_AUTH_RESPONSE = 0x05,
     GET_SALT_REQUEST = 0x06,
-    GET_CHALLENGE_REQUEST = 0x07
+    GET_CHALLENGE_REQUEST = 0x07,
+    GET_UPLOAD = 0x08,
+    POST_DOWNLOAD = 0x09,
+    GET_DOWNLOAD_REQUEST = 0x0A,
+    GET_LIST_RESPONSE = 0x0B,
+    POST_LIST = 0x0C,
+    GET_DELETE_REQUEST = 0x0D
 };
 
 void add_int(std::vector<char>& vec, int value);
@@ -73,6 +79,90 @@ class Payload : public IPayload {
         throw std::runtime_error("Not implemented");
     };
     virtual OPCODE opcode() const override { return _opcode; }
+};
+
+class GetUpload : public Payload {
+   private:
+    int               _data_len;
+    std::vector<char> _data;
+    int               _filename_len;
+    std::vector<char> _filename;
+    std::vector<char> _payload;
+
+   public:
+    GetUpload(std::vector<char> payload);
+    ~GetUpload() = default;
+
+    std::vector<char> serialize() override;
+    bool              deserialize() override;
+};
+
+class PostDownload : public Payload {
+   private:
+    int               _data_len;
+    std::vector<char> _data;
+    int               _filename_len;
+    std::vector<char> _filename;
+
+   public:
+    PostDownload(std::vector<char> filename,
+                 std::vector<char> data,
+                 std::string       user);
+    ~PostDownload() = default;
+
+    std::vector<char> serialize() override;
+    bool              deserialize() override;
+};
+
+class GetDownloadRequest : public Payload {
+   private:
+    int               _filename_len;
+    std::vector<char> _filename;
+    std::vector<char> _payload;
+
+   public:
+    GetDownloadRequest(std::vector<char> payload);
+    ~GetDownloadRequest() = default;
+
+    std::vector<char> serialize() override;
+    bool              deserialize() override;
+};
+
+class GetListRequest : public Payload {
+   private:
+    std::vector<char> _payload;
+
+   public:
+    GetListRequest(std::vector<char> payload);
+    ~GetListRequest() = default;
+
+    std::vector<char> serialize() override;
+    bool              deserialize() override;
+};
+
+class PostListResponse : public Payload {
+    int                            _filenames_count;
+    std::vector<std::vector<char>> _filenames;
+
+   public:
+    PostListResponse(std::string                    user,
+                     std::vector<std::vector<char>> filenames);
+    std::vector<char> serialize();
+    bool              deserialize();
+};
+
+class GetDeleteRequest : public Payload {
+   private:
+    int               _filename_len;
+    std::vector<char> _filename;
+    std::vector<char> _payload;
+
+   public:
+    GetDeleteRequest(std::vector<char> payload);
+    ~GetDeleteRequest() = default;
+
+    std::vector<char> serialize() override;
+    bool              deserialize() override;
 };
 
 class GetChallengeRequest : public Payload {
@@ -202,6 +292,20 @@ class PayloadCreator {
 
     static IPayload* create_get_challenge_request_payload(
         std::vector<char> payload);
+
+    static IPayload* create_get_list_request_payload(
+        std::vector<char> payload);
+    static IPayload* create_get_delete_request_payload(
+        std::vector<char> payload);
+    static IPayload* create_get_upload_payload(std::vector<char> payload);
+    static IPayload* create_get_download_request_payload(
+        std::vector<char> payload);
+    static IPayload* create_post_download_response_payload(
+        std::string       user,
+        std::vector<char> filename,
+        std::vector<char> data);
+    static IPayload* create_post_list_response_payload(
+        std::string user, std::vector<std::vector<char>> filenames);
 };
 
 #endif  // PAYLOAD

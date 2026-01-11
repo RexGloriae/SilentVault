@@ -237,6 +237,202 @@ bool GetSaltRequestPayload::deserialize() {
     return true;
 }
 
+GetUpload::GetUpload(std::vector<char> payload) : Payload(GET_UPLOAD, "") {
+    _payload = payload;
+}
+std::vector<char> GetUpload::serialize() { return std::vector<char>(); }
+bool              GetUpload::deserialize() {
+    size_t index = 0;
+    if (_payload.empty()) return false;
+    _opcode = static_cast<OPCODE>(_payload[index++]);
+    if (_opcode != GET_UPLOAD) {
+        return false;
+    }
+    if (index + sizeof(int) > _payload.size()) return false;
+    std::memcpy(&_user_len, &_payload[index], sizeof(int));
+    index += sizeof(int);
+    if (_user_len < 0) return false;
+    if (index + _user_len > _payload.size()) return false;
+    _user.resize(_user_len);
+    for (int i = 0; i < _user_len; i++) {
+        _user[i] = _payload[index++];
+    }
+    if (index + sizeof(int) > _payload.size()) return false;
+    std::memcpy(&_data_len, &_payload[index], sizeof(int));
+    index += sizeof(int);
+    if (_data_len < 0) return false;
+    if (index + _data_len > _payload.size()) return false;
+    _data.resize(_data_len);
+    for (int i = 0; i < _data_len; i++) {
+        _data[i] = _payload[index++];
+    }
+    if (index + sizeof(int) > _payload.size()) return false;
+    std::memcpy(&_filename_len, &_payload[index], sizeof(int));
+    index += sizeof(int);
+    if (_filename_len < 0) return false;
+    if (index + _filename_len > _payload.size()) return false;
+    _filename.resize(_filename_len);
+    for (int i = 0; i < _filename_len; i++) {
+        _filename[i] = _payload[index++];
+    }
+    return true;
+}
+
+PostDownload::PostDownload(std::vector<char> filename,
+                           std::vector<char> data,
+                           std::string       user)
+    : Payload(POST_DOWNLOAD, user) {
+    _filename = filename;
+    _filename_len = filename.size();
+    _data = data;
+    _data_len = data.size();
+}
+std::vector<char> PostDownload::serialize() {
+    std::vector<char> buff;
+    buff.push_back(_opcode);
+    add_int(buff, _user_len);
+    for (char c : _user) {
+        buff.push_back(c);
+    }
+    add_int(buff, _data_len);
+    for (char c : _data) {
+        buff.push_back(c);
+    }
+    add_int(buff, _filename_len);
+    for (char c : _filename) {
+        buff.push_back(c);
+    }
+    return buff;
+}
+bool PostDownload::deserialize() {
+    // Not needed for this payload
+    return false;
+}
+
+GetDownloadRequest::GetDownloadRequest(std::vector<char> payload)
+    : Payload(GET_DOWNLOAD_REQUEST, "") {
+    _payload = payload;
+}
+std::vector<char> GetDownloadRequest::serialize() {
+    return std::vector<char>();
+}
+bool GetDownloadRequest::deserialize() {
+    size_t index = 0;
+    if (_payload.empty()) return false;
+    _opcode = static_cast<OPCODE>(_payload[index++]);
+    if (_opcode != GET_DOWNLOAD_REQUEST) {
+        return false;
+    }
+    if (index + sizeof(int) > _payload.size()) return false;
+    std::memcpy(&_user_len, &_payload[index], sizeof(int));
+    index += sizeof(int);
+    if (_user_len < 0) return false;
+    if (index + _user_len > _payload.size()) return false;
+    _user.resize(_user_len);
+    for (int i = 0; i < _user_len; i++) {
+        _user[i] = _payload[index++];
+    }
+    if (index + sizeof(int) > _payload.size()) return false;
+    std::memcpy(&_filename_len, &_payload[index], sizeof(int));
+    index += sizeof(int);
+    if (_filename_len < 0) return false;
+    if (index + _filename_len > _payload.size()) return false;
+    _filename.resize(_filename_len);
+    for (int i = 0; i < _filename_len; i++) {
+        _filename[i] = _payload[index++];
+    }
+    return true;
+}
+
+GetListRequest::GetListRequest(std::vector<char> payload)
+    : Payload(GET_LIST_RESPONSE, "") {
+    _payload = payload;
+}
+std::vector<char> GetListRequest::serialize() {
+    return std::vector<char>();
+}
+bool GetListRequest::deserialize() {
+    size_t index = 0;
+    if (_payload.empty()) return false;
+    _opcode = static_cast<OPCODE>(_payload[index++]);
+    if (_opcode != GET_LIST_RESPONSE) {
+        return false;
+    }
+    if (index + sizeof(int) > _payload.size()) return false;
+    std::memcpy(&_user_len, &_payload[index], sizeof(int));
+    index += sizeof(int);
+    if (_user_len < 0) return false;
+    if (index + _user_len > _payload.size()) return false;
+    _user.resize(_user_len);
+    for (int i = 0; i < _user_len; i++) {
+        _user[i] = _payload[index++];
+    }
+    return true;
+}
+
+PostListResponse::PostListResponse(
+    std::string user, std::vector<std::vector<char>> filenames)
+    : Payload(POST_LIST, user) {
+    _filenames = filenames;
+    _filenames_count = filenames.size();
+}
+std::vector<char> PostListResponse::serialize() {
+    std::vector<char> buff;
+    buff.push_back(_opcode);
+    add_int(buff, _user_len);
+    for (char c : _user) {
+        buff.push_back(c);
+    }
+    add_int(buff, _filenames_count);
+    for (const auto& fname : _filenames) {
+        int fname_len = fname.size();
+        add_int(buff, fname_len);
+        for (char c : fname) {
+            buff.push_back(c);
+        }
+    }
+    return buff;
+}
+bool PostListResponse::deserialize() {
+    // Not needed for this payload
+    return false;
+}
+
+GetDeleteRequest::GetDeleteRequest(std::vector<char> payload)
+    : Payload(GET_DELETE_REQUEST, "") {
+    _payload = payload;
+}
+std::vector<char> GetDeleteRequest::serialize() {
+    return std::vector<char>();
+}
+bool GetDeleteRequest::deserialize() {
+    size_t index = 0;
+    if (_payload.empty()) return false;
+    _opcode = static_cast<OPCODE>(_payload[index++]);
+    if (_opcode != GET_DELETE_REQUEST) {
+        return false;
+    }
+    if (index + sizeof(int) > _payload.size()) return false;
+    std::memcpy(&_user_len, &_payload[index], sizeof(int));
+    index += sizeof(int);
+    if (_user_len < 0) return false;
+    if (index + _user_len > _payload.size()) return false;
+    _user.resize(_user_len);
+    for (int i = 0; i < _user_len; i++) {
+        _user[i] = _payload[index++];
+    }
+    if (index + sizeof(int) > _payload.size()) return false;
+    std::memcpy(&_filename_len, &_payload[index], sizeof(int));
+    index += sizeof(int);
+    if (_filename_len < 0) return false;
+    if (index + _filename_len > _payload.size()) return false;
+    _filename.resize(_filename_len);
+    for (int i = 0; i < _filename_len; i++) {
+        _filename[i] = _payload[index++];
+    }
+    return true;
+}
+
 IPayload* PayloadCreator::create_post_auth_response_payload(
     std::string user, bool auth_response) {
     return new PostAuthResponsePayload(user, auth_response);
