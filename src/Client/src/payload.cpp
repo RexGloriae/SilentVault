@@ -28,25 +28,17 @@ std::vector<char> PostChallengeRequestPayload::serialize() {
     return buff;
 }
 
-PostPublicAndSaltPayload::PostPublicAndSaltPayload(std::string       user,
-                                                   std::vector<char> pub,
-                                                   std::vector<char> salt)
-    : Payload(POST_PUB_AND_SALT, user) {
-    _pub = pub;
+PostSaltPayload::PostSaltPayload(std::string user, std::vector<char> salt)
+    : Payload(POST_SALT, user) {
     _salt = salt;
-    _pub_len = pub.size();
     _salt_len = salt.size();
 }
 
-std::vector<char> PostPublicAndSaltPayload::serialize() {
+std::vector<char> PostSaltPayload::serialize() {
     std::vector<char> buff;
     buff.push_back(_opcode);
     add_int(buff, _user_len);
     for (char c : _user) {
-        buff.push_back(c);
-    }
-    add_int(buff, _pub_len);
-    for (char c : _pub) {
         buff.push_back(c);
     }
     add_int(buff, _salt_len);
@@ -98,17 +90,17 @@ std::vector<char> PostResponsePayload::serialize() {
     return buff;
 }
 
-GetPubAndSaltPayload::GetPubAndSaltPayload(std::vector<char> payload)
-    : PostPublicAndSaltPayload({}, {}, {}) {
+GetSaltPayload::GetSaltPayload(std::vector<char> payload)
+    : PostSaltPayload({}, {}) {
     _payload = payload;
 }
 
-bool GetPubAndSaltPayload::deserialize() {
+bool GetSaltPayload::deserialize() {
     size_t index = 0;
 
     if (_payload.empty()) return false;
     _opcode = static_cast<OPCODE>(_payload[index++]);
-    if (_opcode != GET_PUB_AND_SALT) {
+    if (_opcode != GET_SALT) {
         return false;
     }
 
@@ -120,16 +112,6 @@ bool GetPubAndSaltPayload::deserialize() {
     _user.resize(_user_len);
     for (int i = 0; i < _user_len; i++) {
         _user[i] = _payload[index++];
-    }
-
-    if (index + sizeof(int) > _payload.size()) return false;
-    memcpy(&_pub_len, &_payload[index], sizeof(int));
-    index += sizeof(int);
-    if (_pub_len < 0) return false;
-    if (index + _pub_len > _payload.size()) return false;
-    _pub.resize(_pub_len);
-    for (int i = 0; i < _pub_len; i++) {
-        _pub[i] = _payload[index++];
     }
 
     if (index + sizeof(int) > _payload.size()) return false;
@@ -209,11 +191,10 @@ bool GetAuthResponsePayload::deserialize() {
     return true;
 }
 
-PostPublicAndSaltRequestPayload::PostPublicAndSaltRequestPayload(
-    std::string user)
-    : Payload(POST_PUB_AND_SALT_REQUEST, user) {}
+PostSaltRequestPayload::PostSaltRequestPayload(std::string user)
+    : Payload(POST_SALT_REQUEST, user) {}
 
-std::vector<char> PostPublicAndSaltRequestPayload::serialize() {
+std::vector<char> PostSaltRequestPayload::serialize() {
     std::vector<char> buff;
     buff.push_back(_opcode);
     add_int(buff, _user_len);

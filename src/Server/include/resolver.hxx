@@ -19,8 +19,8 @@ class Resolver {
     }
 
     IPayload* solve(IPayload* request);
-    IPayload* solve(const GetPubAndSaltRequestPayload& request);
-    IPayload* solve(const GetPublicAndSaltPayload& request);
+    IPayload* solve(const GetSaltRequestPayload& request);
+    IPayload* solve(const GetSaltPayload& request);
     IPayload* solve(const GetResponsePayload& request);
     IPayload* solve(const GetChallengeRequest& request);
 };

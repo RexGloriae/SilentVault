@@ -9,12 +9,12 @@
 #define interface class
 
 enum OPCODE : uint8_t {
-    GET_PUB_AND_SALT = 0x01,
-    POST_PUB_AND_SALT = 0x02,
+    GET_SALT = 0x01,
+    POST_SALT = 0x02,
     POST_CHALLENGE = 0x03,
     GET_RESPONSE = 0x04,
     POST_AUTH_RESPONSE = 0x05,
-    GET_PUB_AND_SALT_REQUEST = 0x06,
+    GET_SALT_REQUEST = 0x06,
     GET_CHALLENGE_REQUEST = 0x07
 };
 
@@ -87,38 +87,30 @@ class GetChallengeRequest : public Payload {
     bool              deserialize() override;
 };
 
-class PostPublicAndSaltPayload : public Payload {
+class PostSaltPayload : public Payload {
    private:
-    int               _pub_len;
-    std::vector<char> _pub;
     int               _salt_len;
     std::vector<char> _salt;
 
    public:
-    PostPublicAndSaltPayload(std::string       user,
-                             std::vector<char> pub,
-                             std::vector<char> salt);
-    ~PostPublicAndSaltPayload() = default;
+    PostSaltPayload(std::string user, std::vector<char> salt);
+    ~PostSaltPayload() = default;
     std::vector<char> serialize() override;
     bool              deserialize() override;
-    std::vector<char> pub() const override { return _pub; };
     std::vector<char> salt() const override { return _salt; };
 };
 
-class GetPublicAndSaltPayload : public Payload {
+class GetSaltPayload : public Payload {
    private:
-    int               _pub_len;
-    std::vector<char> _pub;
     int               _salt_len;
     std::vector<char> _salt;
     std::vector<char> _payload;
 
    public:
-    GetPublicAndSaltPayload(std::vector<char> payload);
-    ~GetPublicAndSaltPayload() = default;
+    GetSaltPayload(std::vector<char> payload);
+    ~GetSaltPayload() = default;
     bool              deserialize() override;
     std::vector<char> serialize() override;
-    std::vector<char> pub() const override { return _pub; };
     std::vector<char> salt() const override { return _salt; };
 };
 
@@ -172,13 +164,13 @@ class PostAuthResponsePayload : public Payload {
     bool              auth() const override { return _auth_response; };
 };
 
-class GetPubAndSaltRequestPayload : public Payload {
+class GetSaltRequestPayload : public Payload {
    private:
     std::vector<char> _payload;
 
    public:
-    GetPubAndSaltRequestPayload(std::vector<char> payload);
-    ~GetPubAndSaltRequestPayload() = default;
+    GetSaltRequestPayload(std::vector<char> payload);
+    ~GetSaltRequestPayload() = default;
 
     std::vector<char> serialize() override;
     bool              deserialize() override;
@@ -191,14 +183,13 @@ class PayloadCreator {
 
     static IPayload* interpret_payload(std::vector<char> payload);
 
-    static IPayload* create_post_public_and_salt_payload(
-        std::string user, std::vector<char> pub, std::vector<char> salt);
+    static IPayload* create_post_salt_payload(std::string       user,
+                                              std::vector<char> salt);
 
     static IPayload* create_get_response_payload(
         std::vector<char> payload);
 
-    static IPayload* create_get_public_and_salt_payload(
-        std::vector<char> payload);
+    static IPayload* create_get_salt_payload(std::vector<char> payload);
 
     static IPayload* create_post_challenge_payload(
         std::string user, std::vector<char> challenge);
@@ -206,7 +197,7 @@ class PayloadCreator {
     static IPayload* create_post_auth_response_payload(std::string user,
                                                        bool);
 
-    static IPayload* create_get_pub_and_salt_request_payload(
+    static IPayload* create_get_salt_request_payload(
         std::vector<char> payload);
 
     static IPayload* create_get_challenge_request_payload(

@@ -48,11 +48,12 @@ class PythonWrapper {
     /**
      * @brief Compute public key for client for registration.
      * @param pass Client's password.
+     * @param salt Client's salt. Optional. To be used only if reconstructing the public key at authentication.
      * @return A pair with the public key on the first position and the
      * salt on the second one.
      */
     std::pair<std::vector<char>, std::vector<char>> client_pub_from_pass(
-        std::string pass);
+        std::string pass, std::vector<char> salt = {});
     /**
      * @brief Create client commit. First step for authentication.
      * @param pass Client's password.

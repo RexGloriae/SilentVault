@@ -6,12 +6,12 @@
 #include <vector>
 
 enum OPCODE : uint8_t {
-    POST_PUB_AND_SALT = 0x01,
-    GET_PUB_AND_SALT = 0x02,
+    POST_SALT = 0x01,
+    GET_SALT = 0x02,
     GET_CHALLENGE = 0x03,
     POST_RESPONSE = 0x04,
     GET_AUTH_RESPONSE = 0x05,
-    POST_PUB_AND_SALT_REQUEST = 0x06,
+    POST_SALT_REQUEST = 0x06,
     POST_CHALLENGE_REQUEST = 0x07
 };
 
@@ -33,20 +33,15 @@ class PostChallengeRequestPayload : Payload {
     std::vector<char> serialize();
 };
 
-class PostPublicAndSaltPayload : protected Payload {
+class PostSaltPayload : protected Payload {
    protected:
-    int               _pub_len;
-    std::vector<char> _pub;
     int               _salt_len;
     std::vector<char> _salt;
 
    public:
-    PostPublicAndSaltPayload(std::string       user,
-                             std::vector<char> pub,
-                             std::vector<char> salt);
+    PostSaltPayload(std::string user, std::vector<char> salt);
     std::vector<char> serialize();
 
-    std::vector<char> pub() { return _pub; }
     std::vector<char> salt() { return _salt; }
 };
 
@@ -71,12 +66,12 @@ class PostResponsePayload : Payload {
     std::vector<char> serialize();
 };
 
-class GetPubAndSaltPayload : public PostPublicAndSaltPayload {
+class GetSaltPayload : public PostSaltPayload {
    private:
     std::vector<char> _payload;
 
    public:
-    GetPubAndSaltPayload(std::vector<char> payload);
+    GetSaltPayload(std::vector<char> payload);
     bool deserialize();
 };
 
@@ -104,9 +99,9 @@ class GetAuthResponsePayload : Payload {
     bool success() { return _response; }
 };
 
-class PostPublicAndSaltRequestPayload : Payload {
+class PostSaltRequestPayload : Payload {
    public:
-    PostPublicAndSaltRequestPayload(std::string user);
+    PostSaltRequestPayload(std::string user);
     std::vector<char> serialize();
 };
 

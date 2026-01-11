@@ -41,24 +41,16 @@ bool GetChallengeRequest::deserialize() {
     return true;
 }
 
-PostPublicAndSaltPayload::PostPublicAndSaltPayload(std::string       user,
-                                                   std::vector<char> pub,
-                                                   std::vector<char> salt)
-    : Payload(POST_PUB_AND_SALT, user) {
-    _pub = pub;
+PostSaltPayload::PostSaltPayload(std::string user, std::vector<char> salt)
+    : Payload(POST_SALT, user) {
     _salt = salt;
-    _pub_len = pub.size();
     _salt_len = salt.size();
 }
-std::vector<char> PostPublicAndSaltPayload::serialize() {
+std::vector<char> PostSaltPayload::serialize() {
     std::vector<char> buff;
     buff.push_back(_opcode);
     add_int(buff, _user_len);
     for (char c : _user) {
-        buff.push_back(c);
-    }
-    add_int(buff, _pub_len);
-    for (char c : _pub) {
         buff.push_back(c);
     }
     add_int(buff, _salt_len);
@@ -67,21 +59,21 @@ std::vector<char> PostPublicAndSaltPayload::serialize() {
     }
     return buff;
 }
-bool PostPublicAndSaltPayload::deserialize() {
+bool PostSaltPayload::deserialize() {
     // Not needed for this payload
     return false;
 }
 
-GetPublicAndSaltPayload::GetPublicAndSaltPayload(std::vector<char> payload)
-    : Payload(GET_PUB_AND_SALT, "") {
+GetSaltPayload::GetSaltPayload(std::vector<char> payload)
+    : Payload(GET_SALT, "") {
     _payload = payload;
 }
-bool GetPublicAndSaltPayload::deserialize() {
+bool GetSaltPayload::deserialize() {
     bool   success = true;
     size_t index = 0;
     if (_payload.empty()) return false;
     _opcode = static_cast<OPCODE>(_payload[index++]);
-    if (_opcode != GET_PUB_AND_SALT) {
+    if (_opcode != GET_SALT) {
         return false;
     }
     if (index + sizeof(int) > _payload.size()) return false;
@@ -94,15 +86,6 @@ bool GetPublicAndSaltPayload::deserialize() {
         _user[i] = _payload[index++];
     }
     if (index + sizeof(int) > _payload.size()) return false;
-    std::memcpy(&_pub_len, &_payload[index], sizeof(int));
-    index += sizeof(int);
-    if (_pub_len < 0) return false;
-    if (index + _pub_len > _payload.size()) return false;
-    _pub.resize(_pub_len);
-    for (int i = 0; i < _pub_len; i++) {
-        _pub[i] = _payload[index++];
-    }
-    if (index + sizeof(int) > _payload.size()) return false;
     std::memcpy(&_salt_len, &_payload[index], sizeof(int));
     index += sizeof(int);
     if (_salt_len < 0) return false;
@@ -113,7 +96,7 @@ bool GetPublicAndSaltPayload::deserialize() {
     }
     return success;
 }
-std::vector<char> GetPublicAndSaltPayload::serialize() {
+std::vector<char> GetSaltPayload::serialize() {
     // Not needed for this payload
     return std::vector<char>();
 }
@@ -228,19 +211,18 @@ bool PostAuthResponsePayload::deserialize() {
     return false;
 }
 
-GetPubAndSaltRequestPayload::GetPubAndSaltRequestPayload(
-    std::vector<char> payload)
-    : Payload(GET_PUB_AND_SALT_REQUEST, "") {
+GetSaltRequestPayload::GetSaltRequestPayload(std::vector<char> payload)
+    : Payload(GET_SALT_REQUEST, "") {
     _payload = payload;
 }
-std::vector<char> GetPubAndSaltRequestPayload::serialize() {
+std::vector<char> GetSaltRequestPayload::serialize() {
     return std::vector<char>();
 }
-bool GetPubAndSaltRequestPayload::deserialize() {
+bool GetSaltRequestPayload::deserialize() {
     size_t index = 0;
     if (_payload.empty()) return false;
     _opcode = static_cast<OPCODE>(_payload[index++]);
-    if (_opcode != GET_PUB_AND_SALT_REQUEST) {
+    if (_opcode != GET_SALT_REQUEST) {
         return false;
     }
     if (index + sizeof(int) > _payload.size()) return false;
@@ -265,14 +247,14 @@ IPayload* PayloadCreator::create_post_challenge_payload(
     return new PostChallengePayload(user, challenge);
 }
 
-IPayload* PayloadCreator::create_get_public_and_salt_payload(
+IPayload* PayloadCreator::create_get_salt_payload(
     std::vector<char> payload) {
-    return new GetPublicAndSaltPayload(payload);
+    return new GetSaltPayload(payload);
 }
 
-IPayload* PayloadCreator::create_post_public_and_salt_payload(
-    std::string user, std::vector<char> pub, std::vector<char> salt) {
-    return new PostPublicAndSaltPayload(user, pub, salt);
+IPayload* PayloadCreator::create_post_salt_payload(
+    std::string user, std::vector<char> salt) {
+    return new PostSaltPayload(user, salt);
 }
 
 IPayload* PayloadCreator::create_get_response_payload(
@@ -280,9 +262,9 @@ IPayload* PayloadCreator::create_get_response_payload(
     return new GetResponsePayload(payload);
 }
 
-IPayload* PayloadCreator::create_get_pub_and_salt_request_payload(
+IPayload* PayloadCreator::create_get_salt_request_payload(
     std::vector<char> payload) {
-    return new GetPubAndSaltRequestPayload(payload);
+    return new GetSaltRequestPayload(payload);
 }
 
 IPayload* PayloadCreator::create_get_challenge_request_payload(
@@ -293,11 +275,10 @@ IPayload* PayloadCreator::create_get_challenge_request_payload(
 IPayload* PayloadCreator::interpret_payload(std::vector<char> payload) {
     if (payload.empty()) return nullptr;
     switch (static_cast<OPCODE>(payload[0])) {
-        case GET_PUB_AND_SALT:
-            return PayloadCreator::create_get_public_and_salt_payload(
-                payload);
-        case GET_PUB_AND_SALT_REQUEST:
-            return PayloadCreator::create_get_pub_and_salt_request_payload(
+        case GET_SALT:
+            return PayloadCreator::create_get_salt_payload(payload);
+        case GET_SALT_REQUEST:
+            return PayloadCreator::create_get_salt_request_payload(
                 payload);
         case GET_RESPONSE:
             return PayloadCreator::create_get_response_payload(payload);

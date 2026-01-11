@@ -5,12 +5,11 @@
 
 IPayload* Resolver::solve(IPayload* request) {
     switch (request->opcode()) {
-        case GET_PUB_AND_SALT_REQUEST:
+        case GET_SALT_REQUEST:
             return solve(
-                static_cast<const GetPubAndSaltRequestPayload&>(*request));
-        case GET_PUB_AND_SALT:
-            return solve(
-                static_cast<const GetPublicAndSaltPayload&>(*request));
+                static_cast<const GetSaltRequestPayload&>(*request));
+        case GET_SALT:
+            return solve(static_cast<const GetSaltPayload&>(*request));
         case GET_RESPONSE:
             return solve(static_cast<const GetResponsePayload&>(*request));
         case GET_CHALLENGE_REQUEST:
@@ -21,33 +20,27 @@ IPayload* Resolver::solve(IPayload* request) {
     }
 }
 
-IPayload* Resolver::solve(const GetPubAndSaltRequestPayload& request) {
+IPayload* Resolver::solve(const GetSaltRequestPayload& request) {
     std::string       user = request.user();
     Data&             data = Data::getInstance();
-    std::vector<char> pub = data.read_public_key(user);
     std::vector<char> salt = data.read_salt(user);
-    return PayloadCreator::create_post_public_and_salt_payload(
-        user, pub, salt);
+    return PayloadCreator::create_post_salt_payload(user, salt);
 }
 
-IPayload* Resolver::solve(const GetPublicAndSaltPayload& request) {
+IPayload* Resolver::solve(const GetSaltPayload& request) {
     std::string user = request.user();
     Data&       data = Data::getInstance();
-    data.create_file(data.path(user, PUB));
     data.create_file(data.path(user, SALT));
-    data.write_public_key(user, request.pub());
     data.write_salt(user, request.salt());
     return nullptr;
 }
 
 IPayload* Resolver::solve(const GetResponsePayload& request) {
-    std::string       user = request.user();
-    PythonWrapper&    wrapper = PythonWrapper::get();
-    Data&             data = Data::getInstance();
-    std::vector<char> pub_key = data.read_public_key(user);
-    bool              ok = wrapper.server_verify(request.r_bytes(),
+    std::string    user = request.user();
+    PythonWrapper& wrapper = PythonWrapper::get();
+    bool           ok = wrapper.server_verify(request.r_bytes(),
                                     request.response(),
-                                    pub_key,
+                                    request.pub(),
                                     request.challenge());
     return PayloadCreator::create_post_auth_response_payload(user, ok);
 }

@@ -19,6 +19,9 @@ class Server {
 
     void run_cli();
 
+    void _set_up_encryption_key();
+    bool _check_encryption_key();
+
    public:
     Server(Comms& conn);
     ~Server();

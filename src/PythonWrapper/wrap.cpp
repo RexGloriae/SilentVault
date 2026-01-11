@@ -5,11 +5,12 @@
 PythonWrapper::PythonWrapper() {
     Py_Initialize();
     m_thread_state = PyEval_SaveThread();
-    
+
     // Initialize path once
     PyGILState_STATE gstate = PyGILState_Ensure();
-    PyObject* sys_path = PySys_GetObject("path");
-    // Note: PySys_GetObject returns a borrowed reference, do NOT decref it.
+    PyObject*        sys_path = PySys_GetObject("path");
+    // Note: PySys_GetObject returns a borrowed reference, do NOT decref
+    // it.
     PyList_Append(sys_path, PyUnicode_FromString("../../CryptoService/"));
     PyList_Append(sys_path,
                   PyUnicode_FromString(
@@ -69,8 +70,8 @@ std::vector<char> PythonWrapper::decrypt(const std::vector<char>& key,
                                          const std::vector<char>& iv,
                                          const std::vector<char>& cipher) {
     PyGILState_STATE gstate = PyGILState_Ensure();
-    PyObject* py_module = PyImport_ImportModule("aes");
-    PyObject* py_func = PyObject_GetAttrString(py_module, "decr");
+    PyObject*        py_module = PyImport_ImportModule("aes");
+    PyObject*        py_func = PyObject_GetAttrString(py_module, "decr");
 
     PyObject* py_key = PyBytes_FromStringAndSize(key.data(), key.size());
     PyObject* py_iv = PyBytes_FromStringAndSize(iv.data(), iv.size());
@@ -109,8 +110,8 @@ std::vector<char> PythonWrapper::decrypt(const std::vector<char>& key,
 
 std::string PythonWrapper::sha256(const std::string& data) {
     PyGILState_STATE gstate = PyGILState_Ensure();
-    PyObject* py_module = PyImport_ImportModule("sha");
-    PyObject* py_func = PyObject_GetAttrString(py_module, "hash");
+    PyObject*        py_module = PyImport_ImportModule("sha");
+    PyObject*        py_func = PyObject_GetAttrString(py_module, "hash");
 
     PyObject* py_data = PyUnicode_FromString(data.c_str());
     PyObject* args = PyTuple_Pack(1, py_data);
@@ -144,7 +145,7 @@ std::string PythonWrapper::sha256(const std::string& data) {
 void PythonWrapper::zip_files(const std::vector<std::string>& srcs,
                               const std::string&              dest) {
     PyGILState_STATE gstate = PyGILState_Ensure();
-    PyObject* py_module = PyImport_ImportModule("zip");
+    PyObject*        py_module = PyImport_ImportModule("zip");
     PyObject* py_func = PyObject_GetAttrString(py_module, "zip_file");
 
     PyObject* py_list = PyList_New(srcs.size());
@@ -174,8 +175,8 @@ void PythonWrapper::zip_files(const std::vector<std::string>& srcs,
 void PythonWrapper::unzip(const std::string& archive,
                           const std::string& dest_dir) {
     PyGILState_STATE gstate = PyGILState_Ensure();
-    PyObject* py_module = PyImport_ImportModule("zip");
-    PyObject* py_func = PyObject_GetAttrString(py_module, "unzip");
+    PyObject*        py_module = PyImport_ImportModule("zip");
+    PyObject*        py_func = PyObject_GetAttrString(py_module, "unzip");
 
     PyObject* py_src = PyUnicode_FromString(archive.c_str());
     PyObject* py_dest = PyUnicode_FromString(dest_dir.c_str());
@@ -198,7 +199,8 @@ void PythonWrapper::unzip(const std::string& archive,
 }
 
 std::pair<std::vector<char>, std::vector<char>>
-PythonWrapper::client_pub_from_pass(std::string pass) {
+PythonWrapper::client_pub_from_pass(std::string       pass,
+                                    std::vector<char> salt) {
     PyGILState_STATE gstate = PyGILState_Ensure();
     // sys.path is handled in constructor
     PyObject* py_module = PyImport_ImportModule("zk_auth");
@@ -206,12 +208,22 @@ PythonWrapper::client_pub_from_pass(std::string pass) {
         PyObject_GetAttrString(py_module, "client_public_from_password");
 
     PyObject* py_pw = PyUnicode_FromString(pass.c_str());
-    PyObject* py_args = PyTuple_Pack(1, py_pw);
+
+    PyObject* py_salt = nullptr;
+    if (salt.empty()) {
+        py_salt = Py_None;
+        Py_INCREF(Py_None);
+    } else {
+        py_salt = PyBytes_FromStringAndSize(salt.data(), salt.size());
+    }
+
+    PyObject* py_args = PyTuple_Pack(2, py_pw, py_salt);
     PyObject* py_res = PyObject_CallObject(py_func, py_args);
 
     Py_DECREF(py_module);
     Py_DECREF(py_func);
     Py_DECREF(py_pw);
+    Py_DECREF(py_salt);
     Py_DECREF(py_args);
 
     if (!py_res) {
@@ -230,8 +242,8 @@ PythonWrapper::client_pub_from_pass(std::string pass) {
         throw std::runtime_error("Failed to get pub");
     }
 
-    PyObject* salt = PySequence_GetItem(py_res, 1);
-    if (!salt) {
+    PyObject* salt_res = PySequence_GetItem(py_res, 1);
+    if (!salt_res) {
         PyErr_Print();
         Py_DECREF(py_res);
         Py_DECREF(pub);
@@ -245,7 +257,7 @@ PythonWrapper::client_pub_from_pass(std::string pass) {
         PyErr_Print();
         Py_DECREF(py_res);
         Py_DECREF(pub);
-        Py_DECREF(salt);
+        Py_DECREF(salt_res);
         PyGILState_Release(gstate);
         throw std::runtime_error("Error converting pub");
     }
@@ -253,11 +265,11 @@ PythonWrapper::client_pub_from_pass(std::string pass) {
 
     char*      salt_buff;
     Py_ssize_t salt_len;
-    if (PyBytes_AsStringAndSize(salt, &salt_buff, &salt_len) == -1) {
+    if (PyBytes_AsStringAndSize(salt_res, &salt_buff, &salt_len) == -1) {
         PyErr_Print();
         Py_DECREF(py_res);
         Py_DECREF(pub);
-        Py_DECREF(salt);
+        Py_DECREF(salt_res);
         PyGILState_Release(gstate);
         throw std::runtime_error("Error converting salt");
     }
@@ -265,7 +277,7 @@ PythonWrapper::client_pub_from_pass(std::string pass) {
 
     Py_DECREF(py_res);
     Py_DECREF(pub);
-    Py_DECREF(salt);
+    Py_DECREF(salt_res);
 
     PyGILState_Release(gstate);
     return {out_pub, out_salt};
@@ -274,8 +286,8 @@ PythonWrapper::client_pub_from_pass(std::string pass) {
 std::pair<std::vector<char>, std::vector<char>>
 PythonWrapper::client_commit(std::string pass, std::vector<char> salt) {
     PyGILState_STATE gstate = PyGILState_Ensure();
-    PyObject* py_module = PyImport_ImportModule("zk_auth");
-    PyObject* py_func = PyObject_GetAttrString(
+    PyObject*        py_module = PyImport_ImportModule("zk_auth");
+    PyObject*        py_func = PyObject_GetAttrString(
         py_module, "client_create_commit_from_scalar");
 
     PyObject* py_aux_func =
@@ -285,7 +297,7 @@ PythonWrapper::client_commit(std::string pass, std::vector<char> salt) {
         PyBytes_FromStringAndSize(salt.data(), salt.size());
     PyObject* aux_args = PyTuple_Pack(2, py_pw, py_salt);
     PyObject* aux_res = PyObject_CallObject(py_aux_func, aux_args);
-    
+
     Py_DECREF(py_aux_func);
     Py_DECREF(py_pw);
     Py_DECREF(py_salt);
@@ -311,7 +323,7 @@ PythonWrapper::client_commit(std::string pass, std::vector<char> salt) {
     }
     PyObject* args = PyTuple_Pack(1, scalar);
     PyObject* res = PyObject_CallObject(py_func, args);
-    
+
     Py_DECREF(scalar);
     Py_DECREF(args);
     Py_DECREF(py_module);
@@ -329,7 +341,7 @@ PythonWrapper::client_commit(std::string pass, std::vector<char> salt) {
         PyErr_Print();
         Py_DECREF(res);
         if (py_R_bytes) Py_DECREF(py_R_bytes);
-         PyGILState_Release(gstate);
+        PyGILState_Release(gstate);
         throw std::runtime_error("Failed to convery bytes to string");
     }
     std::vector<char> out_R_bytes(R_bytes_buff, R_bytes_buff + len);
@@ -362,8 +374,8 @@ std::vector<char> PythonWrapper::client_compute_response(
     std::vector<char> salt,
     std::vector<char> c) {
     PyGILState_STATE gstate = PyGILState_Ensure();
-    PyObject* py_module = PyImport_ImportModule("zk_auth");
-    PyObject* py_func =
+    PyObject*        py_module = PyImport_ImportModule("zk_auth");
+    PyObject*        py_func =
         PyObject_GetAttrString(py_module, "client_compute_response");
 
     PyObject* py_pass = PyUnicode_FromString(pass.c_str());
@@ -406,8 +418,8 @@ std::vector<char> PythonWrapper::client_compute_response(
 
 std::vector<char> PythonWrapper::server_gen_challenge() {
     PyGILState_STATE gstate = PyGILState_Ensure();
-    PyObject* py_module = PyImport_ImportModule("zk_auth");
-    PyObject* py_func =
+    PyObject*        py_module = PyImport_ImportModule("zk_auth");
+    PyObject*        py_func =
         PyObject_GetAttrString(py_module, "server_gen_challenge");
 
     PyObject* result = PyObject_CallObject(py_func, nullptr);
@@ -441,7 +453,7 @@ bool PythonWrapper::server_verify(std::vector<char> r_bytes,
                                   std::vector<char> pub_key,
                                   std::vector<char> c) {
     PyGILState_STATE gstate = PyGILState_Ensure();
-    PyObject* py_module = PyImport_ImportModule("zk_auth");
+    PyObject*        py_module = PyImport_ImportModule("zk_auth");
     PyObject* py_func = PyObject_GetAttrString(py_module, "server_verify");
 
     PyObject* py_rBytes =

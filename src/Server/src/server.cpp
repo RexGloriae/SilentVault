@@ -5,6 +5,7 @@
 #include <thread>
 
 #include "../../PythonWrapper/wrap.hxx"
+#include "../include/data.hxx"
 
 int               Server::m_running = 0;
 std::atomic<bool> Server::m_should_stop = false;
@@ -56,7 +57,66 @@ void Server::print(const std::string& text, bool new_line) {
 
 void Server::start() {
     PythonWrapper::get();
+    Data& data = Data::getInstance();
+    if (data.exists("../data/setup_key.bin") == false) {
+        _set_up_encryption_key();
+    } else if (_check_encryption_key() == false) {
+        throw std::runtime_error("Wrong encryption key provided!");
+    }
+
     std::thread cli_thread(&Server::run_cli, this);
     m_conn.start_and_listen();
     cli_thread.join();
+}
+
+void Server::_set_up_encryption_key() {
+    std::string pass;
+    Server::print("Set encryption key for server data: ", false);
+    std::cin >> pass;
+
+    PythonWrapper& wrapper = PythonWrapper::get();
+    std::string    key_hash = wrapper.sha256(pass);
+
+    std::vector<char> key_vec;
+    std::vector<char> iv_vec;
+    int               middle = key_hash.size() / 2;
+    int               size = key_hash.size();
+    for (int i = 0; i < middle; i++) {
+        key_vec.push_back(key_hash[i] ^ key_hash[size - 1 - i]);
+    }
+    middle = key_vec.size() / 2;
+    size = key_vec.size();
+    for (int i = 0; i < middle; i++) {
+        iv_vec.push_back(key_vec[i] ^ key_vec[size - 1 - i]);
+    }
+
+    Data& data = Data::getInstance();
+    data.set_up_secret(key_vec, iv_vec);
+    data.set_server_key_iv(key_vec, iv_vec);
+}
+
+bool Server::_check_encryption_key() {
+    std::string pass;
+    Server::print("Enter encryption key for server data: ", false);
+    std::cin >> pass;
+
+    PythonWrapper& wrapper = PythonWrapper::get();
+    std::string    key_hash = wrapper.sha256(pass);
+
+    std::vector<char> key_vec;
+    std::vector<char> iv_vec;
+    int               middle = key_hash.size() / 2;
+    int               size = key_hash.size();
+    for (int i = 0; i < middle; i++) {
+        key_vec.push_back(key_hash[i] ^ key_hash[size - 1 - i]);
+    }
+    middle = key_vec.size() / 2;
+    size = key_vec.size();
+    for (int i = 0; i < middle; i++) {
+        iv_vec.push_back(key_vec[i] ^ key_vec[size - 1 - i]);
+    }
+
+    Data& data = Data::getInstance();
+    data.set_server_key_iv(key_vec, iv_vec);
+    return data.check_secret(key_vec, iv_vec);
 }

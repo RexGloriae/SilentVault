@@ -1,11 +1,12 @@
 #ifndef DATA
 #define DATA
 
+#include <map>
+#include <mutex>
 #include <string>
 #include <vector>
 
 #define SALT "_salt.bin"
-#define PUB "_pub.bin"
 
 class Data {
    private:
@@ -15,6 +16,10 @@ class Data {
     Data& operator=(const Data&) = delete;
     Data(Data&&) = delete;
     Data& operator=(Data&&) = delete;
+
+    std::mutex        _mutex;
+    std::vector<char> _server_key;
+    std::vector<char> _server_iv;
 
     void              _write_byte_stream(const std::vector<char>& data,
                                          std::string              path);
@@ -29,10 +34,13 @@ class Data {
     std::string path(std::string user, std::string type);
     void        create_file(std::string path);
     bool        exists(std::string path);
+    void        set_up_secret(std::vector<char> key, std::vector<char> iv);
+    bool        check_secret(std::vector<char> key, std::vector<char> iv);
 
-    void write_public_key(std::string user, std::vector<char> pub);
-    void write_salt(std::string user, std::vector<char> salt);
-    std::vector<char> read_public_key(std::string user);
+    void set_server_key_iv(std::vector<char> key, std::vector<char> iv);
+    std::pair<std::vector<char>, std::vector<char>> get_server_key_iv();
+
+    void              write_salt(std::string user, std::vector<char> salt);
     std::vector<char> read_salt(std::string user);
 };
 

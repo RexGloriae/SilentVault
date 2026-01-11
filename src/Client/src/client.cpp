@@ -57,10 +57,12 @@ void Client::_run_menu() {
                     _authenticate();
                     _actions_menu();
                 } catch (const std::exception& e) {
-                   std::cout << "\nError during authentication: " << e.what() << "\n";
-                   std::cout << "Press Enter to continue...";
-                   std::cin.ignore();
-                   std::cin.get();
+                    std::cout
+                        << "\nError during authentication: " << e.what()
+                        << "\n";
+                    std::cout << "Press Enter to continue...";
+                    std::cin.ignore();
+                    std::cin.get();
                 }
                 break;
             case 2:
@@ -68,10 +70,12 @@ void Client::_run_menu() {
                 try {
                     _register();
                 } catch (const std::exception& e) {
-                   std::cout << "\nError during registration: " << e.what() << "\n";
-                   std::cout << "Press Enter to continue...";
-                   std::cin.ignore();
-                   std::cin.get();
+                    std::cout
+                        << "\nError during registration: " << e.what()
+                        << "\n";
+                    std::cout << "Press Enter to continue...";
+                    std::cin.ignore();
+                    std::cin.get();
                 }
                 break;
             case 3:
@@ -96,7 +100,7 @@ void Client::_register() {
     std::pair<std::vector<char>, std::vector<char>> result =
         wrapper.client_pub_from_pass(pass);
     // send public and salt to server
-    PostPublicAndSaltPayload payload(user, result.first, result.second);
+    PostSaltPayload payload(user, result.second);
     m_conn.send(payload.serialize());
 }
 
@@ -108,18 +112,18 @@ void Client::_authenticate() {
     Client::print("Enter password: ");
     std::string pass;
     std::cin >> pass;
-    std::pair<std::vector<char>, std::vector<char>> pub_salt_pair;
+
     // request from server pub and salt
-    PostPublicAndSaltRequestPayload req_payload(user);
+    PostSaltRequestPayload req_payload(user);
     m_conn.send(req_payload.serialize());
-    std::vector<char>    buff = m_conn.recv();
-    GetPubAndSaltPayload payload(buff);
+    std::vector<char> buff = m_conn.recv();
+    GetSaltPayload    payload(buff);
     if (payload.deserialize() == false) {
         Client::print("User not found!");
         throw std::runtime_error("user not found");
     }
-    pub_salt_pair.first = payload.pub();
-    pub_salt_pair.second = payload.salt();
+    std::pair<std::vector<char>, std::vector<char>> pub_salt_pair =
+        wrapper.client_pub_from_pass(pass, payload.salt());
 
     // R bytes, r int
     std::pair<std::vector<char>, std::vector<char>> result =
