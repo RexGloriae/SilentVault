@@ -1,5 +1,7 @@
 #include "../include/client.hxx"
 
+#include <filesystem>
+#include <fstream>
 #include <stdexcept>
 
 #include "../../PythonWrapper/wrap.hxx"
@@ -159,6 +161,23 @@ void Client::_authenticate() {
         Client::print("Bad Authentication!");
         throw std::runtime_error("bad auth");
     }
+    _user = user;
+    _generate_secret(pass);
+}
+
+void Client::_generate_secret(std::string pass) {
+    PythonWrapper& wrapper = PythonWrapper::get();
+    std::string    key_hash = wrapper.sha256(pass);
+    int            middle = key_hash.size() / 2;
+    int            size = key_hash.size();
+    for (int i = 0; i < middle; i++) {
+        _key.push_back(key_hash[i] ^ key_hash[size - 1 - i]);
+    }
+    middle = _key.size() / 2;
+    size = _key.size();
+    for (int i = 0; i < middle; i++) {
+        _iv.push_back(_key[i] ^ _key[size - 1 - i]);
+    }
 }
 
 void Client::_actions_menu() {
@@ -177,17 +196,19 @@ void Client::_actions_menu() {
         switch (option) {
             case 1:
                 Client::flush_screen();
-
+                _upload();
                 break;
             case 2:
                 Client::flush_screen();
-
+                _download();
                 break;
             case 3:
                 Client::flush_screen();
+                _see_list();
                 break;
             case 4:
                 Client::flush_screen();
+                _delete();
                 break;
             case 5:
                 _try = false;
@@ -197,4 +218,86 @@ void Client::_actions_menu() {
                 break;
         }
     }
+}
+
+void Client::_upload() {
+    Client::print("Enter path of file to upload: ");
+    std::string path;
+    std::cin >> path;
+    PythonWrapper& wrapper = PythonWrapper::get();
+    wrapper.zip_files({path}, "../tmp/temp_archive.zip");
+    std::ifstream file("../tmp/temp_archive.zip", std::ios::binary);
+    if (!file.is_open()) {
+        Client::print_line("Error opening file!");
+        return;
+    }
+    file.seekg(0, std::ios::end);
+    size_t file_size = file.tellg();
+    file.seekg(0, std::ios::beg);
+    std::vector<char> file_data(file_size);
+    file.read(file_data.data(), file_size);
+    file.close();
+    std::vector<char> encrypted_data =
+        wrapper.encrypt(_key, _iv, file_data);
+    std::string filename = std::filesystem::path(path).filename().string();
+    std::vector<char> filename_cipher = wrapper.encrypt(
+        _key, _iv, std::vector<char>(filename.begin(), filename.end()));
+
+    PostUploadFile payload(encrypted_data, filename_cipher, _user);
+    m_conn.send(payload.serialize());
+    std::filesystem::remove("../tmp/temp_archive.zip");
+}
+void Client::_download() {
+    Client::print("Enter filename to download: ");
+    std::string filename;
+    std::cin >> filename;
+    std::vector<char> filename_cipher = PythonWrapper::get().encrypt(
+        _key, _iv, std::vector<char>(filename.begin(), filename.end()));
+    // send to server request to download
+    PostDownloadRequest payload(filename_cipher, _user);
+    m_conn.send(payload.serialize());
+    GetDownloadFile resp_payload(m_conn.recv());
+    if (resp_payload.deserialize() == false) {
+        Client::print_line("Error receiving file from server!");
+        return;
+    }
+    std::vector<char> plain_data =
+        PythonWrapper::get().decrypt(_key, _iv, resp_payload.file_data());
+    Client::print("Where to save the downloaded file: ");
+    std::string save_path;
+    std::cin >> save_path;
+    std::ofstream outfile("../tmp/tmp_archive.zip", std::ios::binary);
+    PythonWrapper::get().unzip("../tmp/tmp_archive.zip", save_path);
+    std::filesystem::remove("../tmp/tmp_archive.zip");
+    outfile.close();
+}
+void Client::_see_list() {
+    std::vector<std::string> files;
+    PostListRequest          payload(_user);
+    m_conn.send(payload.serialize());
+    GetListResponse payload_resp(m_conn.recv());
+    if (payload_resp.deserialize() == false) {
+        Client::print_line("Error receiving file list from server!");
+        return;
+    }
+
+    for (std::vector<char> fname_cipher : payload_resp.filenames()) {
+        std::vector<char> fname_plain =
+            PythonWrapper::get().decrypt(_key, _iv, fname_cipher);
+        std::string fname_str(fname_plain.begin(), fname_plain.end());
+        files.push_back(fname_str);
+    }
+    Client::print_line("Files on server:");
+    for (std::string fname : files) {
+        Client::print_line(" - " + fname);
+    }
+}
+void Client::_delete() {
+    Client::print("Enter filename to delete: ");
+    std::string filename;
+    std::cin >> filename;
+    std::vector<char> filename_cipher = PythonWrapper::get().encrypt(
+        _key, _iv, std::vector<char>(filename.begin(), filename.end()));
+    PostDeleteRequest payload(filename_cipher, _user);
+    m_conn.send(payload.serialize());
 }

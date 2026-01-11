@@ -12,7 +12,13 @@ enum OPCODE : uint8_t {
     POST_RESPONSE = 0x04,
     GET_AUTH_RESPONSE = 0x05,
     POST_SALT_REQUEST = 0x06,
-    POST_CHALLENGE_REQUEST = 0x07
+    POST_CHALLENGE_REQUEST = 0x07,
+    POST_UPLOAD = 0x08,
+    GET_DOWNLOAD = 0x09,
+    POST_DOWNLOAD_REQUEST = 0x0A,
+    POST_LIST_REQUEST = 0x0B,
+    GET_LIST = 0x0C,
+    POST_DELETE_REQUEST = 0x0D
 };
 
 void add_int(std::vector<char>& vec, int value);
@@ -25,6 +31,70 @@ class Payload {
 
    public:
     Payload(OPCODE opcode, std::string user);
+};
+
+class PostDeleteRequest : public Payload {
+   protected:
+    int               _filename_len;
+    std::vector<char> _filename;
+
+   public:
+    PostDeleteRequest(std::vector<char> filename, std::string user);
+    std::vector<char> serialize();
+};
+
+class PostListRequest : public Payload {
+   public:
+    PostListRequest(std::string user);
+    std::vector<char> serialize();
+};
+
+class GetListResponse : public Payload {
+   private:
+    int                            _filenames_count;
+    std::vector<std::vector<char>> _filenames;
+    std::vector<char>              _payload;
+
+   public:
+    GetListResponse(std::vector<char> payload);
+    bool deserialize();
+
+    std::vector<std::vector<char>> filenames();
+};
+
+class PostUploadFile : public Payload {
+   protected:
+    int               _data_len;
+    std::vector<char> _data;
+    int               _filename_len;
+    std::vector<char> _filename;
+
+   public:
+    PostUploadFile(std::vector<char> data,
+                   std::vector<char> filename,
+                   std::string       user);
+    std::vector<char> serialize();
+};
+
+class PostDownloadRequest : public Payload {
+   protected:
+    int               _filename_len;
+    std::vector<char> _filename;
+
+   public:
+    PostDownloadRequest(std::vector<char> filename, std::string user);
+    std::vector<char> serialize();
+};
+
+class GetDownloadFile : PostUploadFile {
+   private:
+    std::vector<char> _payload;
+
+   public:
+    GetDownloadFile(std::vector<char> payload);
+    bool deserialize();
+
+    std::vector<char> file_data() { return _data; }
 };
 
 class PostChallengeRequestPayload : Payload {

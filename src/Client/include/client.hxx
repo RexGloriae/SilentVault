@@ -17,8 +17,18 @@ class Client {
     void _run_menu();
     void _register();
     void _authenticate();
+    void _generate_secret(std::string pass);
 
     void _actions_menu();
+
+    void _upload();
+    void _download();
+    void _see_list();
+    void _delete();
+
+    std::vector<char> _key;
+    std::vector<char> _iv;
+    std::string       _user;
 
     static int m_running;
     Comms&     m_conn;
@@ -28,6 +38,9 @@ class Client {
     ~Client() {};
 
     void start_cli(const char* host, int port);
+
+    std::vector<char> key() { return _key; }
+    std::vector<char> iv() { return _iv; }
 };
 
 #endif  // CLIENT
