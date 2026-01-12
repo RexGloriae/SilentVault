@@ -10,6 +10,7 @@
 int               Server::m_running = 0;
 std::atomic<bool> Server::m_should_stop = false;
 std::mutex        Server::console_mutex;
+int               Server::_active_clients = 0;
 
 Server::Server(Comms& conn) : m_conn(conn) {
     m_running++;
@@ -38,7 +39,9 @@ void Server::run_cli() {
             m_conn.close_sock();
             break;
         } else if (strcasecmp("stats", line.c_str()) == 0) {
-            Server::print("Active Clients: [Feature not implemented]\n",
+            Server::print("Active Clients: " +
+                              std::to_string(Server::_active_clients) +
+                              "\n",
                           false);
         } else if (strcasecmp("help", line.c_str()) == 0) {
             Server::print("Available commands: stop, stats, help\n",

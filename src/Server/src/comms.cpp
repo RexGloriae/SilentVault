@@ -84,6 +84,7 @@ void Comms::start_and_listen() {
         std::string client_id = std::string(inet_ntoa(addr.sin_addr)) +
                                 ":" + std::to_string(ntohs(addr.sin_port));
         Server::print("Client connected: " + client_id + "...", true);
+        Server::_active_clients++;
         std::thread t(std::bind(
             &Comms::handle_client, this, client_sock, client_id));
         t.detach();
@@ -197,6 +198,7 @@ void Comms::handle_client(int sock, std::string client_id) {
         close(sock);
     }
     Server::print("Client " + client_id + " has disconnected...", true);
+    Server::_active_clients--;
 }
 
 void Comms::close_sock() {

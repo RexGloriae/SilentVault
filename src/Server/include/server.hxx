@@ -27,6 +27,7 @@ class Server {
     ~Server();
 
     static std::atomic<bool> m_should_stop;
+    static int               _active_clients;
     static std::mutex        console_mutex;
     static void              print(const std::string& text, bool new_line);
 
