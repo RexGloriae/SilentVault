@@ -1,11 +1,12 @@
 import zipfile
+import os
 
 # @param src: list of files to zip
 # @param dest: archive name
 def zip_file(src: list[str], dest: str):
     with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED) as zip_file:
         for file in src:
-            zip_file.write(file)
+            zip_file.write(file, arcname=os.path.basename(file))
 
 # @param src: archive
 # @param dest: target directory
