@@ -1,0 +1,206 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{SilentVault: A Password-Based Zero Knowledge File Server}
+
+\author{
+\IEEEauthorblockN{Codreanu Andrei Daniel}
+\IEEEauthorblockA{
+\textit{Facultatea de Sisteme Informatice si Calculatoare} \\
+\textit{Academia Tehnica Militara "Ferdinand I"} \\
+Bucuresti, Romania \\
+andreidanielcodreanu@gmail.com
+}
+}
+
+\maketitle
+
+\begin{abstract}
+SilentVault is a secure client-server file storage system that employs a password-based Zero Knowledge Proof authentication protocol based by Schnorr identification. By doing away with reusable password verifiers, the system guarantees that user passwords are never sent or kept on the server.
+Elliptic curve cryptography is used for authentication, which is carried out over a TLS channel and offers robust security guarantees even in the case of server compromise.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Zero Knowledge Proof, Schnorr Protocol, File Server, Authentication, Cryptography
+\end{IEEEkeywords}
+
+%-------------------------------------------------
+\section{Introduction}
+
+Although password-based authentication is still the most popular method for remote access systems, it has intrinsic flaws like credential reuse and offline brute-force attacks. Database compromise is a critical security event because traditional solutions based on salted password hashes still expose reusable verifiers to the server.
+
+SilentVault uses a password-based Zero Knowledge authentication method to get around these restrictions. The server uses algebraic relationships defined over elliptic curve groups to confirm that it knows the password without ever receiving it.
+
+%-------------------------------------------------
+\section{System Architecture}
+
+SilentVault follows a modular client--server architecture. Communication
+between the client and server is secured using TLS, while authentication
+and file operations are handled at the application layer.
+
+Main components include:
+\begin{itemize}
+    \item Client module responsible for authentication and file requests
+    \item Server module managing sessions and file storage
+    \item CryptoService implementing the Schnorr-like protocol
+    \item Payload and resolver layers for protocol abstraction
+\end{itemize}
+
+This separation improves maintainability and allows cryptographic components
+to evolve independently of network logic.
+
+\subsection{Functionalities}
+In order to provide an example of a ZKP applied to a real-life scenario, SilentVault allows the client to do a couple operations regarding files. He can also manage uploaded files, as follows:
+\begin{itemize}
+    \item Uploads files to server.
+    \item Downloads previously uploaded files.
+    \item Checks a list of all the previously uploaded files.
+    \item Demands the server to delete an uploaded file.
+\end{itemize}
+
+The server, besides managing user's files and public data, implements a minimal Command Line Interface, having only the functionality to print a statistic of how many users are currently connected to the server.
+
+Both the client and the server have verbose elements.
+
+%-------------------------------------------------
+\section{Zero Knowledge Authentication Protocol}
+
+\subsection{Mathematical Model}
+
+The protocol uses an element $g$ to generate a cyclic group $G$ of prime order $q$. In reality, $G$ is instantiated as a group of elliptic curves (P-256).
+
+A user password $P$ is transformed into a secret scalar:
+\begin{equation}
+x = \mathrm{KDF}(P, \text{salt}) \bmod q
+\end{equation}
+
+The corresponding public value is:
+\begin{equation}
+Y = g^x
+\end{equation}
+
+\subsection{Authentication Steps}
+
+For each authentication session:
+\begin{enumerate}
+    \item Client selects random $r \in \mathbb{Z}_q$ and computes $R = g^r$
+    \item Server sends a random challenge $c$
+    \item Client responds with $s = r + cx \bmod q$
+    \item Server verifies:
+    \begin{equation}
+        g^s \stackrel{?}{=} R \cdot Y^c
+    \end{equation}
+\end{enumerate}
+
+Successful verification proves knowledge of $x$ without revealing it.
+
+\subsection{Security Properties}
+
+The protocol satisfies:
+\begin{itemize}
+    \item Completeness: honest clients are always accepted
+    \item Soundness: attackers cannot authenticate without knowing $x$
+    \item Zero Knowledge: transcripts reveal no information about $x$
+\end{itemize}
+
+%-------------------------------------------------
+\section{Client--Server Sequence}
+
+The authentication sequence is as follows:
+\begin{enumerate}
+    \item TLS handshake establishment
+    \item Client sends commitment $R$
+    \item Server replies with challenge $c$
+    \item Client sends response $s$
+    \item Server verifies identity
+\end{enumerate}
+
+Upon successful authentication, file operations are enabled over the same
+secure channel.
+
+%-------------------------------------------------
+\section{Comparison with Classical Authentication}
+
+\subsection{Hash-Based Authentication}
+
+Traditional systems store a verifier of the form:
+\begin{equation}
+H = \mathrm{Hash}(P || \text{salt})
+\end{equation}
+
+A compromised database allows offline brute-force attacks, making password
+security dependent on computational cost alone.
+
+\subsection{Zero Knowledge Approach}
+
+Only the public value $Y = g^x$ is stored in SilentVault; this value cannot be used to verify password guesses offline. It is impossible for a fully compromised server to pose as a client.
+
+\subsection{Security Comparison}
+
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+Property & Hash + Salt & ZKP \\
+\hline
+Password exposure & Indirect & None \\
+Offline attack & Yes & No \\
+Replay attack & Possible & Impossible \\
+Server compromise & Critical & Limited \\
+\hline
+\end{tabular}
+\end{center}
+%-------------------------------------------------
+\section{Implementation}
+\subsection{Modules}
+The application is implemented using a few modules, some common between the client and the server.
+\subsubsection{"payload" module}
+This module defines the format of the messages sent between the client and the server. It handles serialization and de-serialization, from raw byte strings to concrete classes and vice-versa.
+\subsubsection{"resolver" module}
+This module is specific only to the server. It handles the resolving of different requests received from the client, in a polymorphic manner, according to \textit{Object Oriented Programming} paradigms.
+\subsubsection{"data" module}
+It handles the effective management of stored data on the server, like:
+\begin{itemize}
+    \item Reading files.
+    \item Writing files.
+    \item Disk organization.
+    \item Executing a double-encryption on the data received from each server.
+\end{itemize}
+\subsection{Languages used}
+The project is written mainly in \textit{C++}, but the cryptographic operations are written in \textit{Python} for easier implementation.
+%-------------------------------------------------
+\section{Conclusion}
+
+Zero Knowledge authentication can be successfully incorporated into a workable file server architecture, as SilentVault shows.
+The system greatly lessens the impact of server compromise and offers a solid basis for secure distributed storage systems by doing away with reusable password verifiers.
+
+Future research will focus on end-to-end encrypted file storage and non-interactive ZK protocols.
+
+%-------------------------------------------------
+\begin{thebibliography}{00}
+
+\bibitem{schnorr}
+C. Schnorr, ``Efficient Identification and Signatures for Smart Cards,''
+\emph{Advances in Cryptology -- CRYPTO}, 1989.
+
+\bibitem{ecc}
+D. Hankerson, A. Menezes, S. Vanstone,
+\emph{Guide to Elliptic Curve Cryptography}, Springer, 2004.
+
+\bibitem{zk}
+O. Goldreich, \emph{Foundations of Cryptography}, Cambridge University Press.
+
+\end{thebibliography}
+
+\end{document}
