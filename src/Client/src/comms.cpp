@@ -27,6 +27,8 @@ void Comms::create_context() {
 
 void Comms::tcp_conn(const char* host, int port) {
     for (int attempt = 1; attempt <= MAX_RETRIES; ++attempt) {
+        std::cout << "\n[Comms] >> Trying SSL connection (attempt "
+                  << attempt << ")...\n";
         m_sock = socket(AF_INET, SOCK_STREAM, 0);
         if (m_sock < 0) {
             throw std::runtime_error("Socket error");
@@ -116,13 +118,15 @@ std::vector<char> Comms::recv() {
     // 1. Read the length (4 bytes)
     char* len_buf = reinterpret_cast<char*>(&len);
     while (total_read < static_cast<int>(sizeof(int))) {
-        bytes_read = SSL_read(m_ssl, len_buf + total_read,
-                              sizeof(int) - total_read);
+        bytes_read = SSL_read(
+            m_ssl, len_buf + total_read, sizeof(int) - total_read);
         if (bytes_read <= 0) {
             // Check for actual error vs graceful shutdown if needed,
-            // but for a robust client, 0 or <0 here usually means we can't proceed.
-            // SSL_get_error might provide more info, but throwing is safest.
-            throw std::runtime_error("Connection lost or error reading length");
+            // but for a robust client, 0 or <0 here usually means we can't
+            // proceed. SSL_get_error might provide more info, but throwing
+            // is safest.
+            throw std::runtime_error(
+                "Connection lost or error reading length");
         }
         total_read += bytes_read;
     }
@@ -141,10 +145,11 @@ std::vector<char> Comms::recv() {
     std::vector<char> payload(len);
     total_read = 0;
     while (total_read < len) {
-        bytes_read = SSL_read(m_ssl, payload.data() + total_read,
-                              len - total_read);
+        bytes_read =
+            SSL_read(m_ssl, payload.data() + total_read, len - total_read);
         if (bytes_read <= 0) {
-             throw std::runtime_error("Connection lost or error reading body");
+            throw std::runtime_error(
+                "Connection lost or error reading body");
         }
         total_read += bytes_read;
     }
