@@ -139,9 +139,9 @@ void Data::_remove_index(std::string user, std::vector<char> filename) {
     }
     fin.close();
     std::ofstream fout(index_path, std::ios::binary);
-    fout.write(reinterpret_cast<const char*>(&total_files - 1),
-               sizeof(int));
-    for (int i = 0; i < total_files; i++) {
+    int           new_total = total_files - 1;
+    fout.write(reinterpret_cast<const char*>(&new_total), sizeof(int));
+    for (size_t i = 0; i < all_files.size(); i++) {
         int fname_len = all_files[i].size();
         fout.write(reinterpret_cast<const char*>(&fname_len), sizeof(int));
         fout.write(all_files[i].data(), fname_len);
@@ -197,15 +197,9 @@ std::vector<char> Data::get_file(std::string       user,
     PythonWrapper&    wrapper = PythonWrapper::get();
     std::vector<char> cipher_filename =
         wrapper.encrypt(_server_key, _server_iv, filename);
-    int           index = _get_index(user, cipher_filename);
-    std::string   file_path = path(user, INDEXED_FILE(index));
-    std::ifstream file(file_path, std::ios::binary);
-    file.seekg(0, std::ios::end);
-    size_t file_size = file.tellg();
-    file.seekg(0, std::ios::beg);
-    std::vector<char> file_data(file_size);
-    file.read(file_data.data(), file_size);
-    file.close();
+    int               index = _get_index(user, cipher_filename);
+    std::string       file_path = path(user, INDEXED_FILE(index));
+    std::vector<char> file_data = _read_byte_stream(file_path);
     return wrapper.decrypt(_server_key, _server_iv, file_data);
 }
 void Data::delete_file(std::string user, std::vector<char> filename) {
@@ -215,9 +209,13 @@ void Data::delete_file(std::string user, std::vector<char> filename) {
     _remove_index(user, cipher_filename);
 }
 std::vector<std::vector<char>> Data::list_files(std::string user) {
-    std::string   index_path = path(user, FILES);
-    std::ifstream fin(index_path, std::ios::binary);
-    int           total_files;
+    PythonWrapper& wrapper = PythonWrapper::get();
+    std::string    index_path = path(user, FILES);
+    std::ifstream  fin(index_path, std::ios::binary);
+    if (!fin.is_open()) {
+        return {};
+    }
+    int total_files;
     fin.read(reinterpret_cast<char*>(&total_files), sizeof(int));
     std::vector<std::vector<char>> files;
     for (int i = 0; i < total_files; i++) {
@@ -226,7 +224,8 @@ std::vector<std::vector<char>> Data::list_files(std::string user) {
         fin.read(reinterpret_cast<char*>(&fname_len), sizeof(int));
         fname.resize(fname_len);
         fin.read(fname.data(), fname_len);
-        files.push_back(fname);
+        // files.push_back(fname);
+        files.push_back(wrapper.decrypt(_server_key, _server_iv, fname));
     }
     fin.close();
     return files;
