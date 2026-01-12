@@ -170,6 +170,8 @@ void Client::_generate_secret(std::string pass) {
     std::string    key_hash = wrapper.sha256(pass);
     int            middle = key_hash.size() / 2;
     int            size = key_hash.size();
+    _key.clear();
+    _iv.clear();
     for (int i = 0; i < middle; i++) {
         _key.push_back(key_hash[i] ^ key_hash[size - 1 - i]);
     }
@@ -196,19 +198,43 @@ void Client::_actions_menu() {
         switch (option) {
             case 1:
                 Client::flush_screen();
-                _upload();
+                try {
+                    _upload();
+                } catch (const std::exception& e) {
+                    std::cout << "Error while uploading: " << e.what();
+                    std::cin.ignore();
+                    std::cin.get();
+                }
                 break;
             case 2:
                 Client::flush_screen();
-                _download();
+                try {
+                    _download();
+                } catch (const std::exception& e) {
+                    std::cout << "Error while uploading: " << e.what();
+                    std::cin.ignore();
+                    std::cin.get();
+                }
                 break;
             case 3:
                 Client::flush_screen();
-                _see_list();
+                try {
+                    _see_list();
+                } catch (const std::exception& e) {
+                    std::cout << "Error while fetching list: " << e.what();
+                    std::cin.ignore();
+                    std::cin.get();
+                }
                 break;
             case 4:
                 Client::flush_screen();
-                _delete();
+                try {
+                    _delete();
+                } catch (const std::exception& e) {
+                    std::cout << "Error while deleting file: " << e.what();
+                    std::cin.ignore();
+                    std::cin.get();
+                }
                 break;
             case 5:
                 _try = false;
@@ -267,9 +293,11 @@ void Client::_download() {
     std::string save_path;
     std::cin >> save_path;
     std::ofstream outfile("../tmp/tmp_archive.zip", std::ios::binary);
+    outfile.write(reinterpret_cast<const char*>(plain_data.data()),
+                  plain_data.size());
+    outfile.close();
     PythonWrapper::get().unzip("../tmp/tmp_archive.zip", save_path);
     std::filesystem::remove("../tmp/tmp_archive.zip");
-    outfile.close();
 }
 void Client::_see_list() {
     std::vector<std::string> files;
@@ -291,6 +319,8 @@ void Client::_see_list() {
     for (std::string fname : files) {
         Client::print_line(" - " + fname);
     }
+    std::cin.ignore();
+    std::cin.get();
 }
 void Client::_delete() {
     Client::print("Enter filename to delete: ");
