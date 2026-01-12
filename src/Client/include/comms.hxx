@@ -23,8 +23,8 @@
 #define PORT 4433
 #define HOSTNAME "127.0.0.1"
 #define HOSTNAME_LEN 9
-constexpr int MAX_RETRIES = 20;
-constexpr int RETRY_DELAY_MS = 250;
+constexpr int MAX_RETRIES = 100;
+constexpr int RETRY_DELAY_MS = 500;
 
 class Comms {
    public:
