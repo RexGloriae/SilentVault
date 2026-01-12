@@ -209,6 +209,8 @@ class GetSaltPayload : public Payload {
    private:
     int               _salt_len;
     std::vector<char> _salt;
+    int               _pub_len;
+    std::vector<char> _pub;
     std::vector<char> _payload;
 
    public:
@@ -217,6 +219,7 @@ class GetSaltPayload : public Payload {
     bool              deserialize() override;
     std::vector<char> serialize() override;
     std::vector<char> salt() const override { return _salt; };
+    std::vector<char> pub() const override { return _pub; };
 };
 
 class GetResponsePayload : public Payload {

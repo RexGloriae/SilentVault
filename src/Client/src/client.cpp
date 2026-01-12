@@ -105,7 +105,7 @@ void Client::_register() {
         wrapper.client_pub_from_pass(pass);
     // send public and salt to server
     Client::print_line("Sending salt to server...");
-    PostSaltPayload payload(user, result.second);
+    PostSaltPayload payload(user, result.second, result.first);
     m_conn.send(payload.serialize());
 }
 

@@ -107,12 +107,16 @@ class PostSaltPayload : protected Payload {
    protected:
     int               _salt_len;
     std::vector<char> _salt;
+    int               _pub_len;
+    std::vector<char> _pub;
 
    public:
-    PostSaltPayload(std::string user, std::vector<char> salt);
+    PostSaltPayload(std::string user, std::vector<char> salt,
+                    std::vector<char> pub);
     std::vector<char> serialize();
 
     std::vector<char> salt() { return _salt; }
+    std::vector<char> pub() { return _pub; }
 };
 
 class PostResponsePayload : Payload {

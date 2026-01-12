@@ -94,6 +94,15 @@ bool GetSaltPayload::deserialize() {
     for (int i = 0; i < _salt_len; i++) {
         _salt[i] = _payload[index++];
     }
+    if (index + sizeof(int) > _payload.size()) return false;
+    std::memcpy(&_pub_len, &_payload[index], sizeof(int));
+    index += sizeof(int);
+    if (_pub_len < 0) return false;
+    if (index + _pub_len > _payload.size()) return false;
+    _pub.resize(_pub_len);
+    for (int i = 0; i < _pub_len; i++) {
+        _pub[i] = _payload[index++];
+    }
     return success;
 }
 std::vector<char> GetSaltPayload::serialize() {

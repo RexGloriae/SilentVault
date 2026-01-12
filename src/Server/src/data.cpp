@@ -32,6 +32,18 @@ std::vector<char> Data::read_salt(std::string user) {
     std::vector<char> cipher = _read_byte_stream(path(user, SALT));
     return wrapper.decrypt(_server_key, _server_iv, cipher);
 }
+void Data::write_pub_key(std::string user, std::vector<char> pub) {
+    PythonWrapper&    wrapper = PythonWrapper::get();
+    std::vector<char> cipher =
+        wrapper.encrypt(_server_key, _server_iv, pub);
+
+    _write_byte_stream(cipher, path(user, PUB_KEY));
+}
+std::vector<char> Data::read_pub_key(std::string user) {
+    PythonWrapper&    wrapper = PythonWrapper::get();
+    std::vector<char> cipher = _read_byte_stream(path(user, PUB_KEY));
+    return wrapper.decrypt(_server_key, _server_iv, cipher);
+}
 
 void Data::_write_byte_stream(const std::vector<char>& data,
                               std::string              path) {

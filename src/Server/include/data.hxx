@@ -7,6 +7,7 @@
 #include <vector>
 
 #define SALT "_salt.bin"
+#define PUB_KEY "_pub.bin"
 #define FILES "_files.dat"
 #define INDEXED_FILE(i) ("_file_" + std::to_string(i) + ".bin")
 
@@ -48,6 +49,9 @@ class Data {
 
     void              write_salt(std::string user, std::vector<char> salt);
     std::vector<char> read_salt(std::string user);
+
+    void              write_pub_key(std::string user, std::vector<char> pub);
+    std::vector<char> read_pub_key(std::string user);
 
     void              add_file(std::string       user,
                                std::vector<char> filename,

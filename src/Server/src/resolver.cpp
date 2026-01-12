@@ -48,12 +48,15 @@ IPayload* Resolver::solve(const GetSaltRequestPayload& request,
 
 IPayload* Resolver::solve(const GetSaltPayload& request,
                           std::string           client_id) {
-    Server::print("Storing salt from client " + client_id + "...", true);
+    Server::print("Storing salt and pub from client " + client_id + "...",
+                  true);
 
     std::string user = request.user();
     Data&       data = Data::getInstance();
     data.create_file(data.path(user, SALT));
     data.write_salt(user, request.salt());
+    data.create_file(data.path(user, PUB_KEY));
+    data.write_pub_key(user, request.pub());
     return nullptr;
 }
 
@@ -62,12 +65,12 @@ IPayload* Resolver::solve(const GetResponsePayload& request,
     Server::print(
         "Verifying AUTH response from client " + client_id + "...", true);
 
-    std::string    user = request.user();
-    PythonWrapper& wrapper = PythonWrapper::get();
-    bool           ok = wrapper.server_verify(request.r_bytes(),
-                                    request.response(),
-                                    request.pub(),
-                                    request.challenge());
+    std::string       user = request.user();
+    Data&             data = Data::getInstance();
+    PythonWrapper&    wrapper = PythonWrapper::get();
+    std::vector<char> pub = data.read_pub_key(user);
+    bool              ok = wrapper.server_verify(
+        request.r_bytes(), request.response(), pub, request.challenge());
     return PayloadCreator::create_post_auth_response_payload(user, ok);
 }
 

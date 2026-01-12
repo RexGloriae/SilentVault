@@ -193,10 +193,14 @@ std::vector<char> PostChallengeRequestPayload::serialize() {
     return buff;
 }
 
-PostSaltPayload::PostSaltPayload(std::string user, std::vector<char> salt)
+PostSaltPayload::PostSaltPayload(std::string       user,
+                                 std::vector<char> salt,
+                                 std::vector<char> pub)
     : Payload(POST_SALT, user) {
     _salt = salt;
     _salt_len = salt.size();
+    _pub = pub;
+    _pub_len = pub.size();
 }
 
 std::vector<char> PostSaltPayload::serialize() {
@@ -208,6 +212,10 @@ std::vector<char> PostSaltPayload::serialize() {
     }
     add_int(buff, _salt_len);
     for (char c : _salt) {
+        buff.push_back(c);
+    }
+    add_int(buff, _pub_len);
+    for (char c : _pub) {
         buff.push_back(c);
     }
     return buff;
@@ -256,7 +264,7 @@ std::vector<char> PostResponsePayload::serialize() {
 }
 
 GetSaltPayload::GetSaltPayload(std::vector<char> payload)
-    : PostSaltPayload({}, {}) {
+    : PostSaltPayload("", {}, {}) {
     _payload = payload;
 }
 
