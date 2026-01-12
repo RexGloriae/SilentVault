@@ -81,14 +81,16 @@ void Comms::start_and_listen() {
             if (Server::m_should_stop) break;
             continue;
         }
-        std::cout << "Client connected: " << inet_ntoa(addr.sin_addr)
-                  << ":" << ntohs(addr.sin_port) << std::endl;
-        std::thread t(std::bind(&Comms::handle_client, this, client_sock));
+        std::string client_id = std::string(inet_ntoa(addr.sin_addr)) +
+                                ":" + std::to_string(ntohs(addr.sin_port));
+        Server::print("Client connected: " + client_id + "...", true);
+        std::thread t(std::bind(
+            &Comms::handle_client, this, client_sock, client_id));
         t.detach();
     }
 }
 
-void Comms::handle_client(int sock) {
+void Comms::handle_client(int sock, std::string client_id) {
     SSL* ssl = nullptr;
     try {
         ssl = SSL_new(m_ctx);
@@ -110,8 +112,8 @@ void Comms::handle_client(int sock) {
             // 1. Read the length (4 bytes)
             char* len_buf = reinterpret_cast<char*>(&len);
             while (total_read < static_cast<int>(sizeof(int))) {
-                bytes_read = SSL_read(ssl, len_buf + total_read,
-                                      sizeof(int) - total_read);
+                bytes_read = SSL_read(
+                    ssl, len_buf + total_read, sizeof(int) - total_read);
                 if (bytes_read <= 0) {
                     // Client disconnected or error
                     run = false;
@@ -123,22 +125,25 @@ void Comms::handle_client(int sock) {
 
             // Safety check
             if (len < 0 || len > 10 * 1024 * 1024) {
-                 std::cerr << "Invalid length received: " << len << std::endl;
-                 run = false;
-                 break;
+                std::cerr << "Invalid length received: " << len
+                          << std::endl;
+                run = false;
+                break;
             }
-            if (len == 0) { 
-                 // Empty payload? Just continue (if valid) or close?
-                 // Assuming continue for now, but watch for infinite loops if 0-byte reads persist (should be covered by bytes_read check)
-                 continue; 
+            if (len == 0) {
+                // Empty payload? Just continue (if valid) or close?
+                // Assuming continue for now, but watch for infinite loops
+                // if 0-byte reads persist (should be covered by bytes_read
+                // check)
+                continue;
             }
 
             // 2. Read the body
             std::vector<char> buff(len);
             total_read = 0;
             while (total_read < len) {
-                bytes_read = SSL_read(ssl, buff.data() + total_read,
-                                      len - total_read);
+                bytes_read = SSL_read(
+                    ssl, buff.data() + total_read, len - total_read);
                 if (bytes_read <= 0) {
                     run = false;
                     break;
@@ -160,7 +165,7 @@ void Comms::handle_client(int sock) {
                 // log bad request
                 continue;
             }
-            IPayload* response = solver.solve(request);
+            IPayload* response = solver.solve(request, client_id);
             if (response == nullptr) {
                 delete request;
                 continue;
@@ -191,6 +196,7 @@ void Comms::handle_client(int sock) {
         }
         close(sock);
     }
+    Server::print("Client " + client_id + " has disconnected...", true);
 }
 
 void Comms::close_sock() {

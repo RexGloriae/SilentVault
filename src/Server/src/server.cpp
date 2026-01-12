@@ -22,6 +22,7 @@ Server::~Server() {};
 
 void Server::run_cli() {
     std::string line;
+    std::cin.ignore();
     while (!m_should_stop) {
         std::cout << "Server >$ " << std::flush;
 
@@ -32,17 +33,18 @@ void Server::run_cli() {
         if (line.empty()) continue;
 
         if (strcasecmp("stop", line.c_str()) == 0) {
-            Server::print("Shutting down...", true);
+            Server::print("Shutting down...\n", false);
             m_should_stop = true;
             m_conn.close_sock();
             break;
         } else if (strcasecmp("stats", line.c_str()) == 0) {
-            Server::print("Active Clients: [Feature not implemented]",
-                          true);
+            Server::print("Active Clients: [Feature not implemented]\n",
+                          false);
         } else if (strcasecmp("help", line.c_str()) == 0) {
-            Server::print("Available commands: stop, stats, help", true);
+            Server::print("Available commands: stop, stats, help\n",
+                          false);
         } else {
-            Server::print("Unknown command: " + line, true);
+            Server::print("Unknown command: " + line + "\n", false);
         }
     }
 }
@@ -51,8 +53,10 @@ void Server::print(const std::string& text, bool new_line) {
     std::lock_guard<std::mutex> lock(Server::console_mutex);
     std::cout << "\r" << std::string(80, ' ') << "\r";
     std::cout << "Server >$ " << text;
-    if (new_line == true) std::cout << std::endl;
-    std::cout << "Server >$ " << std::flush;
+    if (new_line == true) {
+        std::cout << std::endl;
+        std::cout << "Server >$ " << std::flush;
+    }
 }
 
 void Server::start() {
@@ -63,7 +67,7 @@ void Server::start() {
     } else if (_check_encryption_key() == false) {
         throw std::runtime_error("Wrong encryption key provided!");
     }
-
+    Server::print("Type 'help' to see available commands...\n", false);
     std::thread cli_thread(&Server::run_cli, this);
     m_conn.start_and_listen();
     cli_thread.join();
@@ -71,7 +75,7 @@ void Server::start() {
 
 void Server::_set_up_encryption_key() {
     std::string pass;
-    Server::print("Set encryption key for server data: ", false);
+    std::cout << "Server >$ Set encryption key for server data: ";
     std::cin >> pass;
 
     PythonWrapper& wrapper = PythonWrapper::get();
@@ -97,7 +101,7 @@ void Server::_set_up_encryption_key() {
 
 bool Server::_check_encryption_key() {
     std::string pass;
-    Server::print("Enter encryption key for server data: ", false);
+    std::cout << "Server >$ Enter encryption key for server data: ";
     std::cin >> pass;
 
     PythonWrapper& wrapper = PythonWrapper::get();

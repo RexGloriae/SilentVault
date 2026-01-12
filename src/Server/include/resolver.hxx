@@ -18,15 +18,20 @@ class Resolver {
         return instance;
     }
 
-    IPayload* solve(IPayload* request);
-    IPayload* solve(const GetSaltRequestPayload& request);
-    IPayload* solve(const GetSaltPayload& request);
-    IPayload* solve(const GetResponsePayload& request);
-    IPayload* solve(const GetChallengeRequest& request);
-    IPayload* solve(const GetDeleteRequest& request);
-    IPayload* solve(const GetDownloadRequest& request);
-    IPayload* solve(const GetListRequest& request);
-    IPayload* solve(const GetUpload& request);
+    IPayload* solve(IPayload* request, std::string client_id);
+    IPayload* solve(const GetSaltRequestPayload& request,
+                    std::string                  client_id);
+    IPayload* solve(const GetSaltPayload& request, std::string client_id);
+    IPayload* solve(const GetResponsePayload& request,
+                    std::string               client_id);
+    IPayload* solve(const GetChallengeRequest& request,
+                    std::string                client_id);
+    IPayload* solve(const GetDeleteRequest& request,
+                    std::string             client_id);
+    IPayload* solve(const GetDownloadRequest& request,
+                    std::string               client_id);
+    IPayload* solve(const GetListRequest& request, std::string client_id);
+    IPayload* solve(const GetUpload& request, std::string client_id);
 };
 
 #endif  // RESOLVER

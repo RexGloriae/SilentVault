@@ -50,7 +50,7 @@ class Comms {
 
     void create_context(const char* cert_file, const char* key_file);
     void create_listen_sock(const char* port);
-    void handle_client(int sock);
+    void handle_client(int sock, std::string client_id);
 };
 
 #endif  // COMMS
