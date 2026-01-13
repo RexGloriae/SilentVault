@@ -1,3 +1,6 @@
+<img src="https://img.shields.io/badge/Python-FFD43B?style=for-the-badge&logo=python&logoColor=blue"/>
+![C++](https://img.shields.io/badge/c++-%2300599C.svg?style=for-the-badge&logo=c%2B%2B&logoColor=white)
+
 # SilentVault
 
 SilentVault is a **secured file server**, written in **C++**. It permits storing and accessing files on a remote server using a **Pasword-Based Zero Knowledge Proof(ZKP)** authentication mechanism. The project is oriented to real-life cryptographic security.
