@@ -1,10 +1,10 @@
 # SilentVault
 
-SilentVault is a **secured file server*, written in **C++**. It permits storing and accessing files on a remote server using a **Pasword-Basez Zero Knowledge Proof(ZKP)** authentication mechanism. The project is oriented to real-life cryptographic security.
+SilentVault is a **secured file server**, written in **C++**. It permits storing and accessing files on a remote server using a **Pasword-Based Zero Knowledge Proof(ZKP)** authentication mechanism. The project is oriented to real-life cryptographic security.
 
 ---
 
-## 🔐 Main Characteristics
+## Main Characteristics
 
 * **Zero Knowledge** Authentication – the secret password is never sent to the server
 * Secure communications with **TLS (OpenSSL)**
@@ -13,7 +13,7 @@ SilentVault is a **secured file server*, written in **C++**. It permits storing 
 
 ---
 
-## 🧠 Security Model
+## Security Model
 
 SilentVault completely eliminates authentication methods based on hashes. The server only stores a public value mathematically derived from the secret password, and the authentication is made by verifying an algebraic relation.
 
@@ -26,7 +26,7 @@ Security properties:
 
 ---
 
-## 🔢 The Math behind (brief)
+## The Math behind (brief)
 
 The protocol is based on **discrete logarithms** in a cyclic group (eliptic curve):
 
@@ -46,7 +46,7 @@ without finding the secret `x`.
 
 ---
 
-## 🚀 Build & Run
+## Build & Run
 
 ### Dependencies
 
@@ -78,7 +78,7 @@ Client:
 
 ---
 
-## 📚 Used Technologies
+## Used Technologies
 
 * C++17
 * OpenSSL
