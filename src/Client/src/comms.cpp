@@ -115,24 +115,20 @@ std::vector<char> Comms::recv() {
     int bytes_read = 0;
     int total_read = 0;
 
-    // 1. Read the length (4 bytes)
+    // read len
     char* len_buf = reinterpret_cast<char*>(&len);
     while (total_read < static_cast<int>(sizeof(int))) {
         bytes_read = SSL_read(
             m_ssl, len_buf + total_read, sizeof(int) - total_read);
         if (bytes_read <= 0) {
-            // Check for actual error vs graceful shutdown if needed,
-            // but for a robust client, 0 or <0 here usually means we can't
-            // proceed. SSL_get_error might provide more info, but throwing
-            // is safest.
+            // throw exception if error
             throw std::runtime_error(
                 "Connection lost or error reading length");
         }
         total_read += bytes_read;
     }
 
-    // Safety check: Sanitizing input length to prevent huge allocations
-    // Let's assume 10MB limit for now, adjust as needed.
+    // prevent huge allocs
     if (len < 0 || len > 10 * 1024 * 1024) {
         throw std::runtime_error("Invalid payload length received");
     }
@@ -141,7 +137,7 @@ std::vector<char> Comms::recv() {
         return std::vector<char>();
     }
 
-    // 2. Read the body
+    // read actual payload
     std::vector<char> payload(len);
     total_read = 0;
     while (total_read < len) {

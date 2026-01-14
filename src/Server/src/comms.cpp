@@ -102,7 +102,6 @@ void Comms::handle_client(int sock, std::string client_id) {
             throw std::runtime_error("error accepting client");
         }
 
-        // TODO: implement client handling
         // Loop to handle requests from this client
         bool run = true;
         while (run) {
@@ -110,7 +109,7 @@ void Comms::handle_client(int sock, std::string client_id) {
             int bytes_read = 0;
             int total_read = 0;
 
-            // 1. Read the length (4 bytes)
+            // read len)
             char* len_buf = reinterpret_cast<char*>(&len);
             while (total_read < static_cast<int>(sizeof(int))) {
                 bytes_read = SSL_read(
@@ -132,14 +131,11 @@ void Comms::handle_client(int sock, std::string client_id) {
                 break;
             }
             if (len == 0) {
-                // Empty payload? Just continue (if valid) or close?
-                // Assuming continue for now, but watch for infinite loops
-                // if 0-byte reads persist (should be covered by bytes_read
-                // check)
+                // Empty payload
                 continue;
             }
 
-            // 2. Read the body
+            // read actual payload
             std::vector<char> buff(len);
             total_read = 0;
             while (total_read < len) {
@@ -189,7 +185,7 @@ void Comms::handle_client(int sock, std::string client_id) {
         SSL_free(ssl);
         close(sock);
     } catch (const std::exception& e) {
-        // Log the exception if needed
+        // log exception
         if (ssl) {
             ERR_clear_error();
             SSL_shutdown(ssl);

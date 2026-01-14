@@ -9,8 +9,6 @@ PythonWrapper::PythonWrapper() {
     // Initialize path once
     PyGILState_STATE gstate = PyGILState_Ensure();
     PyObject*        sys_path = PySys_GetObject("path");
-    // Note: PySys_GetObject returns a borrowed reference, do NOT decref
-    // it.
     PyList_Append(sys_path, PyUnicode_FromString("../../CryptoService/"));
     PyList_Append(sys_path,
                   PyUnicode_FromString(
@@ -202,9 +200,8 @@ std::pair<std::vector<char>, std::vector<char>>
 PythonWrapper::client_pub_from_pass(std::string       pass,
                                     std::vector<char> salt) {
     PyGILState_STATE gstate = PyGILState_Ensure();
-    // sys.path is handled in constructor
-    PyObject* py_module = PyImport_ImportModule("zk_auth");
-    PyObject* py_func =
+    PyObject*        py_module = PyImport_ImportModule("zk_auth");
+    PyObject*        py_func =
         PyObject_GetAttrString(py_module, "client_public_from_password");
 
     PyObject* py_pw = PyUnicode_FromString(pass.c_str());

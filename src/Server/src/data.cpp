@@ -236,7 +236,6 @@ std::vector<std::vector<char>> Data::list_files(std::string user) {
         fin.read(reinterpret_cast<char*>(&fname_len), sizeof(int));
         fname.resize(fname_len);
         fin.read(fname.data(), fname_len);
-        // files.push_back(fname);
         files.push_back(wrapper.decrypt(_server_key, _server_iv, fname));
     }
     fin.close();
