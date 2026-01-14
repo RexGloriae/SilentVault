@@ -37,6 +37,8 @@ mkdir ./src/Client/bin
 mkdir ./src/Client/data
 
 echo "[SETUP] Setting up server certificates..."
+touch ./src/Server/crypto/server.crt
+touch ./src/Server/crypto/server.key
 ./src/Server/setup.sh
 
 echo "[SETUP] Building application..."
