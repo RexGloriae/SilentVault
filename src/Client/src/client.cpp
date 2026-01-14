@@ -99,7 +99,7 @@ void Client::_register() {
     Client::print("Enter a password: ");
     std::string pass;
     std::cin >> pass;
-    // pub, salt
+    // generate pub and salt from private
     Client::print_line("Generating public key and salt from secret...");
     std::pair<std::vector<char>, std::vector<char>> result =
         wrapper.client_pub_from_pass(pass);
