@@ -39,6 +39,9 @@ mkdir ./src/Client/data
 echo "[SETUP] Setting up server certificates..."
 ./src/Server/setup.sh
 
+echo "[SETUP] Building application..."
+make
+
 echo "[SETUP] Installation completed successfully..."
 echo "[SETUP] Exiting..."
 
