@@ -62,11 +62,8 @@ without finding the secret `x`.
 
 ```bash
 git clone https://www.github.com/RexGloriae/SilentVault/
-python3 -m venv venv
-source ./venv/bin/activate
-pip install -r requirements.txt
-./src/Server/setup.sh
-make
+chmod +x setup.sh
+./setup.sh
 ```
 
 ### Run
