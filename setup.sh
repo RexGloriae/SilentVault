@@ -3,8 +3,31 @@
 echo "[SETUP] Starting setup..."
 
 if ! command -v python3 &> /dev/null; then
-    echo "[SETUP] Python3 could not be found. Please install Python3 first..."
-    exit 1
+    echo "[SETUP] python3 could not be found. Installing python3..."
+    sudo apt install python3
+fi
+
+python3 - <<'EOF'
+import venv
+EOF
+if [ $? -ne 0]; then
+    echo "[SETUP] python3-venv could not be found. Installing python3-venv..."
+    sudo apt install python3-venv
+fi
+
+if ! command -v pip &> /dev/null; then
+    echo "[SETUP] pip could not be found. Installing pip..."
+    sudo apt install python3-pip
+fi
+
+if ! command -v openssl &> /dev/null; then
+    echo "[ERROR] OpenSSL could not be found. Installing OpenSSL..."
+    sudo apt install openssl
+fi
+
+if ! pkg-config --exists openssl; then
+    echo "[ERROR] OpenSSL development headers missing (libssl-dev). Installing missing headers..."
+    sudo apt install libssl-dev
 fi
 
 if [ ! -d "venv" ]; then
