@@ -2,6 +2,17 @@
 
 echo "[SETUP] Starting setup..."
 
+if ! command -v make &> /dev/null; then
+    echo "[ERROR] make could not be found. Installing make..."
+    sudo apt install make
+fi
+
+if ! command -v g++ &> /dev/null; then
+    echo "[ERROR] g++ could not be found. Installing g++..."
+    sudo apt install g++
+fi
+
+
 if ! command -v python3 &> /dev/null; then
     echo "[SETUP] python3 could not be found. Installing python3..."
     sudo apt install python3
