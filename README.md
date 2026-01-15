@@ -69,11 +69,13 @@ chmod +x setup.sh
 ### Run
 Server:
 ```bash
-./src/Server/bin/server
+cd /src/Server/bin/
+./server
 ```
 Client:
 ```bash
-./src/Client/bin/client
+cd /src/Client/bin/
+./client
 ```
 
 ---
